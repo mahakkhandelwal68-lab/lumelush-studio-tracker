@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { BrandMark } from "@/components/BrandMark";
+import { ActivityTracker } from "@/components/ActivityTracker";
 
 const NAV = [
   { href: "/caller", label: "Dashboard" },
@@ -23,6 +24,7 @@ export default async function CallerLayout({
 
   return (
     <div className="min-h-screen">
+      <ActivityTracker />
       <header className="sticky top-0 z-30 border-b border-edge bg-base/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-4">
