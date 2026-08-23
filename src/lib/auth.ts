@@ -2,13 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/supabase/types";
 
-const ROLE_HOME: Record<UserRole, string> = {
-  admin: "/admin",
-  caller: "/caller",
-  consultant: "/consultant",
-};
-
-export default async function Home() {
+export async function requireProfile(role: UserRole) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,9 +14,13 @@ export default async function Home() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("*")
     .eq("id", user.id)
     .single();
 
-  redirect(profile ? ROLE_HOME[profile.role as UserRole] : "/login");
+  if (!profile || !profile.active || profile.role !== role) {
+    redirect("/login");
+  }
+
+  return { supabase, profile };
 }

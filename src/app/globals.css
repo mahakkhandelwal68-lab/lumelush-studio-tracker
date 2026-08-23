@@ -1,26 +1,183 @@
 @import "tailwindcss";
 
+/* ============================================================
+   LumeLush Studio — dark-first design system
+   Palette sampled from the logo: blue → teal → green over navy.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand ramp, straight off the logo */
+  --brand-blue: #0b7bee;
+  --brand-blue-deep: #1e3fd0;
+  --brand-teal: #23bfb5;
+  --brand-mint: #4fc08d;
+  --brand-green-deep: #14604a;
+  --brand-navy: #1e2b4d;
+
+  /* Surfaces — navy-tinted rather than neutral grey, so the app
+     reads as *our* dark, not a generic dark theme. */
+  --surface-base: #0b1120;
+  --surface-raised: #111a2e;
+  --surface-overlay: #16203a;
+  --surface-hover: #1b2745;
+
+  --border-subtle: #1f2c4d;
+  --border-strong: #2c3c66;
+
+  /* Text */
+  --text-primary: #eef2fb;
+  --text-secondary: #a3b0cc;
+  --text-muted: #6b7a9c;
+
+  /* Status colours, tuned for contrast on the navy base */
+  --status-new: #4aa3f0;
+  --status-callback: #f0b429;
+  --status-noanswer: #8b93ad;
+  --status-dead: #e5646a;
+  --status-booked: #3fbf8f;
+
+  --accent-gradient: linear-gradient(
+    100deg,
+    var(--brand-blue) 0%,
+    var(--brand-teal) 52%,
+    var(--brand-mint) 100%
+  );
+
+  --ring: 0 0 0 2px rgba(35, 191, 181, 0.45);
+
+  /* Light "island" tokens — for components that should read as a real,
+     familiar light-mode surface (calendars, dense grids) even though the
+     app shell around them stays dark. Used only where explicitly opted in
+     via the .panel-light wrapper, never globally. */
+  --surface-light-base: #f6f7fb;
+  --surface-light-raised: #ffffff;
+  --surface-light-hover: #eef1f9;
+  --border-light: #e1e5f0;
+  --border-light-strong: #c7cee2;
+  --text-on-light-primary: #161d33;
+  --text-on-light-secondary: #4c5670;
+  --text-on-light-faint: #8791a8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-base: var(--surface-base);
+  --color-raised: var(--surface-raised);
+  --color-overlay: var(--surface-overlay);
+  --color-hover: var(--surface-hover);
+
+  --color-edge: var(--border-subtle);
+  --color-edge-strong: var(--border-strong);
+
+  --color-ink: var(--text-primary);
+  --color-ink-dim: var(--text-secondary);
+  --color-ink-faint: var(--text-muted);
+
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-navy: var(--brand-navy);
+
+  --color-status-new: var(--status-new);
+  --color-status-callback: var(--status-callback);
+  --color-status-noanswer: var(--status-noanswer);
+  --color-status-dead: var(--status-dead);
+  --color-status-booked: var(--status-booked);
+
+  --color-light-base: var(--surface-light-base);
+  --color-light-raised: var(--surface-light-raised);
+  --color-light-hover: var(--surface-light-hover);
+  --color-light-edge: var(--border-light);
+  --color-light-edge-strong: var(--border-light-strong);
+  --color-light-ink: var(--text-on-light-primary);
+  --color-light-ink-dim: var(--text-on-light-secondary);
+  --color-light-ink-faint: var(--text-on-light-faint);
+
+  /* Playfair for brand moments, Georgia for reading,
+     a clean sans reserved for dense data + numerals. */
+  --font-display: var(--font-playfair), Georgia, serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border-subtle);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers and dense table data: sans + tabular figures so columns line up. */
+.data,
+.data-num {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+.data-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* The logo wordmark, rendered in the brand gradient. */
+.brand-mark {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.accent-bar {
+  background: var(--accent-gradient);
+}
+
+/* Focus ring that matches the brand rather than the browser default. */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+::selection {
+  background: rgba(35, 191, 181, 0.3);
+}
+
+/* A light "island" — e.g. the availability calendar — embedded in the dark
+   shell. Resets the ambient dark defaults (border colour, scrollbar) for
+   everything inside so it reads as a real light surface, not a dark card
+   that forgot to invert. */
+.panel-light {
+  background: var(--surface-light-base);
+  color: var(--text-on-light-primary);
+  border-color: var(--border-light);
+  scrollbar-color: var(--border-light-strong) transparent;
+}
+.panel-light * {
+  border-color: var(--border-light);
+}
+.panel-light ::-webkit-scrollbar-thumb {
+  background: var(--border-light-strong);
+  border: 2px solid var(--surface-light-base);
+}
+
+/* Scrollbars styled to the dark surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid var(--surface-base);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }

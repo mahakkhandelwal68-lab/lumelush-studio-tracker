@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude code local settings — can contain secrets pasted into permission
+# rules from past session commands; never share across machines
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

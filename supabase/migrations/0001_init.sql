@@ -116,6 +116,8 @@ create policy "profiles_self_read" on profiles for select
   using (id = auth.uid() or current_role_is('admin'));
 create policy "profiles_admin_write" on profiles for all
   using (current_role_is('admin')) with check (current_role_is('admin'));
+create policy "profiles_caller_read_consultants" on profiles for select
+  using (role = 'consultant' and current_role_is('caller'));
 
 -- leads
 create policy "leads_admin_all" on leads for all
