@@ -21,7 +21,7 @@ availability). Admin and Consultant pages are stubs pending the next pass.
    This creates three confirmed accounts (password `lumelush@123` for all):
    - `admin@lumelush.com`
    - `caller@lumelush.com` — has seeded leads
-   - `consultant@lumelush.com` — has seeded open availability slots
+   - `sarah@lumelush.com` — has seeded open availability slots
 5. Run the app:
    ```bash
    npm run dev

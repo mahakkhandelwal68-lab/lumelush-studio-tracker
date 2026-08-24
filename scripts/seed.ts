@@ -45,11 +45,11 @@ const chance = (p: number) => rnd() < p;
 const TEAM: { email: string; full_name: string; role: UserRole }[] = [
   { email: "admin@lumelush.com", full_name: "Aarav Mehta", role: "admin" },
   { email: "caller@lumelush.com", full_name: "Cara Caller", role: "caller" },
-  { email: "consultant@lumelush.com", full_name: "Cole Consultant", role: "consultant" },
+  { email: "sarah@lumelush.com", full_name: "Cole Consultant", role: "consultant" },
 ];
 
 const CALLER_EMAILS = ["caller@lumelush.com"];
-const CONSULTANT_EMAILS = ["consultant@lumelush.com"];
+const CONSULTANT_EMAILS = ["sarah@lumelush.com"];
 
 // ---------------------------------------------------------------- leads
 

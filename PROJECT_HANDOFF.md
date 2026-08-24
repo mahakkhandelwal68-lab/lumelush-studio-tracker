@@ -75,7 +75,7 @@ Exactly 3 accounts exist, on the `lumelush.com` domain, all password
 `lumelush@123`:
 - `admin@lumelush.com`
 - `caller@lumelush.com`
-- `consultant@lumelush.com`
+- `sarah@lumelush.com` (consultant)
 
 There used to be more (from an old seed script default of 3 callers + 2
 consultants + 2 admins) — they were deliberately deleted down to one of each
