@@ -28,7 +28,7 @@ commented with *why*, not just *what*, especially `src/lib/policy.ts`,
 |---|---|---|
 | **Supabase** | Database (Postgres), Auth, Row Level Security | Supabase MCP connector — already authorized on this account. Project ref `hnvtawqrtogdcmaoqmjg`, region `ap-southeast-1`. Use `list_projects`/`execute_sql`/`apply_migration` etc. |
 | **GitHub** | Source of truth for code | Repo: `github.com/mahakkhandelwal68-lab/lumelush-studio-tracker` (public — no secrets are in it, verified). You push here with plain `git` commands. |
-| **Vercel** | Hosting, auto-deploys on push | Project **`lumelush-studio-crm`** (note: NOT `lumelush-crm` — that's a dead leftover project from an earlier failed manual-upload attempt; ignore or ask the user to delete it). Linked to the GitHub repo's `master` branch. Vercel MCP connector — already authorized. Live at **https://lumelush-studio-crm.vercel.app**. |
+| **Vercel** | Hosting, auto-deploys on push | Project **`lumelush-studio-crm`** (note: NOT `lumelush-crm` — that's a dead leftover project from an earlier failed manual-upload attempt; ignore or ask the user to delete it). Linked to the GitHub repo's `master` branch. Vercel MCP connector — already authorized. Live at **https://crm.lumelush.com** (custom domain, primary — set as `NEXT_PUBLIC_SITE_URL`) and also `https://lumelush-studio-crm.vercel.app` (still works, not removed). |
 
 ## The workflow — how changes actually reach production
 
@@ -55,7 +55,7 @@ there is no separate deploy step for them to run.
 - Apply it live via the Supabase MCP `apply_migration` tool.
 - Also write the same SQL to a new file in `supabase/migrations/`, following
   the existing `NNNN_description.sql` numbering (last one so far:
-  `0020_meeting_package_name.sql` — next one starts at `0021`). This is
+  `0022_drop_activity_pings.sql` — next one starts at `0023`). This is
   belt-and-suspenders repo history, not the source of truth — the live DB is
   the source of truth.
 - If the schema change affects any table shape the app queries, regenerate
@@ -81,6 +81,58 @@ There used to be more (from an old seed script default of 3 callers + 2
 consultants + 2 admins) — they were deliberately deleted down to one of each
 role. `scripts/seed.ts` has been updated to match this reduced team; re-running
 it (`npm run seed`) will not recreate the old extra accounts.
+
+## Capacity — both platforms are on free tier, on purpose for now
+
+Supabase org and Vercel team are both on **free/hobby plans**. This is a
+deliberate choice, not an oversight — the user's own company use is low
+volume enough that free tier is fine for a long while (checked: actual DB
+size was ~11MB against Supabase's 500MB cap early on). Two things worth
+knowing before adding anything that writes rows frequently:
+
+- **A per-minute "activity heartbeat" feature was built, then deliberately
+  removed** (see git history: "Track caller/consultant active time" followed
+  by "Remove caller/consultant activity tracking"). At real team scale
+  (~15 tracked staff), it was projected to become the single largest source
+  of database growth by far — more than all real lead/call/meeting data
+  combined — because per-minute rows compound fast. The user wants a
+  *separate* dedicated tool for time-tracking instead of building it into
+  this app. Don't re-add anything with a similar "ping every N seconds/
+  minutes" pattern without doing the same growth math first and getting
+  explicit buy-in.
+- If a future feature needs high-frequency writes, budget the storage math
+  (rows/day × row size × retention) before building, and prefer aggregating
+  into daily/weekly summary rows over keeping unbounded raw event logs.
+- When the user is ready to actually sell this to other companies (not just
+  their own internal use), they plan to upgrade both platforms to paid tiers
+  first — this is a known, deliberate future step, not a gap to flag again.
+
+## Deferred: Google Places lead-generation feature
+
+Discussed but **not built yet** — the user wants an Admin → "Extract Leads"
+page that searches Google's official Places API (Text Search) by
+profession + district and imports results into the existing `leads` table.
+Key facts already researched, so a future session doesn't need to re-derive
+them:
+
+- Must use the **official Places API**, not scraping — scraping Google Maps
+  violates their ToS and was explicitly ruled out.
+- **India-specific pricing applies** (the user's business is India-based):
+  ~35,000 free monthly billable events on the Places API Pro tier, then
+  ~$9.60/1,000 requests. At realistic usage (a few dozen searches/month)
+  this is effectively free. Verify current numbers again before building —
+  Google's pricing pages change.
+- **Essentials tier doesn't include phone/website fields at all** — Pro tier
+  is required for "Contact Data" fields, not an optional upgrade.
+- A single API query caps around 20–60 results, not the ~120 the user wants
+  per district — the feature should chain a few sub-queries (e.g. split by
+  sub-area or keyword variant) behind one "search" button click to reach
+  ~120 deduplicated results per search.
+- The user will need to create their own Google Cloud project + Places API
+  key (a new env var) — same limitation as always, only they can do that
+  part.
+- For now: leads are being sourced manually outside the app; this feature
+  is intentionally on hold until the user decides to pick it up.
 
 ## Local dev
 
