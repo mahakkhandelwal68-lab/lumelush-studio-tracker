@@ -15,32 +15,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_pings: {
-        Row: {
-          id: string
-          pinged_at: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          pinged_at?: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          pinged_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "activity_pings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       availability_change_requests: {
         Row: {
           consultant_id: string
