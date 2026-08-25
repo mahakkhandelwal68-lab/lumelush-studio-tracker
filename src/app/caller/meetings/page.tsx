@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/auth";
 import { Badge, Card, CardHeader, EmptyState } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
+import { MeetingLinkCell } from "@/app/caller/MeetingLinkCell";
 import type { MeetingResult } from "@/lib/supabase/types";
 
 const COL_HEAD =
@@ -111,6 +112,7 @@ export default async function CallerMeetingsPage() {
                 <tr className="border-b border-edge">
                   <th className={COL_HEAD}>Lead</th>
                   <th className={COL_HEAD}>Scheduled</th>
+                  <th className={COL_HEAD}>Meeting link</th>
                   <th className={COL_HEAD}>Attendance</th>
                   <th className={COL_HEAD}>Stage</th>
                   <th className={COL_HEAD}>Package</th>
@@ -138,6 +140,12 @@ export default async function CallerMeetingsPage() {
                       </td>
                       <td className="data-num px-3 py-3 text-sm text-ink-dim">
                         {formatDateTime(m.scheduled_start)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <MeetingLinkCell
+                          locationType={m.location_type}
+                          locationDetail={m.location_detail}
+                        />
                       </td>
                       <td className="px-3 py-3 text-sm text-ink-dim">
                         {stage.attendance}

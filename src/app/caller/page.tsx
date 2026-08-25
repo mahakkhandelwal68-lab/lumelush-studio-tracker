@@ -101,6 +101,21 @@ export default async function CallerDashboard() {
     if (m.result !== "pending") entry.held += 1;
   }
 
+  // The join link/phone detail for each lead's latest meeting, so the caller
+  // can share it themselves (e.g. over WhatsApp) without asking the
+  // consultant. allMeetings is ordered by scheduled_start ascending, so the
+  // last write per lead is the most recent/upcoming one.
+  const meetingLinks: Record<
+    string,
+    { locationType: "google_meet" | "phone"; locationDetail: string | null }
+  > = {};
+  for (const m of allMeetings) {
+    meetingLinks[m.lead_id] = {
+      locationType: m.location_type,
+      locationDetail: m.location_detail,
+    };
+  }
+
   const nowIso = new Date().toISOString();
   const callbacksDueToday = allLeads.filter(
     (l) =>
@@ -136,6 +151,7 @@ export default async function CallerDashboard() {
           leads={allLeads}
           history={Object.fromEntries(history)}
           meetingCounts={meetingCounts}
+          meetingLinks={meetingLinks}
           consultants={consultants ?? []}
           now={nowIso}
         />

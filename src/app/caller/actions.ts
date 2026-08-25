@@ -102,11 +102,13 @@ export async function bookMeeting(input: {
       (e): e is string => Boolean(e)
     );
 
+    // Context notes are for the consultant only (shown on their dashboard) —
+    // never put them in the calendar description, since that goes out in
+    // the invite email to the client.
     const created = await createMeetEvent({
       startIso: input.startTime,
       endIso: input.endTime,
       summary: `LumeLush Studio — meeting with ${input.leadName}`,
-      description: input.contextNotes || undefined,
       attendeeEmails: attendees,
     });
 

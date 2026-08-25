@@ -6,6 +6,7 @@ import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
 import { LogCallModal } from "@/app/caller/LogCallModal";
 import { BookMeetingModal } from "@/app/caller/BookMeetingModal";
+import { MeetingLinkCell } from "@/app/caller/MeetingLinkCell";
 import { reviveLead } from "@/app/caller/actions";
 
 export interface Lead {
@@ -34,6 +35,11 @@ export interface LeadHistory {
 export interface MeetingCount {
   total: number;
   held: number;
+}
+
+export interface MeetingLink {
+  locationType: "google_meet" | "phone";
+  locationDetail: string | null;
 }
 
 interface Consultant {
@@ -117,12 +123,14 @@ export function LeadsCard({
   leads,
   history,
   meetingCounts,
+  meetingLinks,
   consultants,
   now,
 }: {
   leads: Lead[];
   history: Record<string, LeadHistory>;
   meetingCounts: Record<string, MeetingCount>;
+  meetingLinks: Record<string, MeetingLink>;
   consultants: Consultant[];
   now: string;
 }) {
@@ -260,6 +268,7 @@ export function LeadsCard({
                     lead={lead}
                     history={history[lead.id]}
                     meetings={meetingCounts[lead.id]}
+                    meetingLink={meetingLinks[lead.id]}
                     now={now}
                     onCall={() => setCallLead(lead)}
                     onBook={() => setBookLead(lead)}
@@ -300,6 +309,7 @@ function LeadRow({
   lead,
   history,
   meetings,
+  meetingLink,
   now,
   onCall,
   onBook,
@@ -307,6 +317,7 @@ function LeadRow({
   lead: Lead;
   history?: LeadHistory;
   meetings?: MeetingCount;
+  meetingLink?: MeetingLink;
   now: string;
   onCall: () => void;
   onBook: () => void;
@@ -439,6 +450,15 @@ function LeadRow({
         )}
 
         {lead.status === "booked" && <Badge tone="booked">handed over</Badge>}
+
+        {lead.status === "booked" && meetingLink && (
+          <div className="mt-1.5">
+            <MeetingLinkCell
+              locationType={meetingLink.locationType}
+              locationDetail={meetingLink.locationDetail}
+            />
+          </div>
+        )}
       </td>
 
       <td className="px-3 py-3">
