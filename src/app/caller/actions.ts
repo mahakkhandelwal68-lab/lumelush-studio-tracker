@@ -58,6 +58,7 @@ export async function logCall(input: {
 export async function bookMeeting(input: {
   leadId: string;
   leadName: string;
+  businessName: string | null;
   startTime: string;
   endTime: string;
   durationMinutes: number;
@@ -108,7 +109,7 @@ export async function bookMeeting(input: {
     const created = await createMeetEvent({
       startIso: input.startTime,
       endIso: input.endTime,
-      summary: `LumeLush Studio — meeting with ${input.leadName}`,
+      summary: `LumeLush Studio × ${input.businessName || input.leadName} — Consultation`,
       attendeeEmails: attendees,
     });
 

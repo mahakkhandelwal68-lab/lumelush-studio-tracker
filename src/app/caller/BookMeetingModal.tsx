@@ -32,7 +32,13 @@ export function BookMeetingModal({
   consultants,
   onClose,
 }: {
-  lead: { id: string; ref: string; name: string; email: string | null };
+  lead: {
+    id: string;
+    ref: string;
+    name: string;
+    business_name: string | null;
+    email: string | null;
+  };
   consultants: Consultant[];
   onClose: () => void;
 }) {
@@ -180,6 +186,7 @@ export function BookMeetingModal({
         await bookMeeting({
           leadId: lead.id,
           leadName: lead.name,
+          businessName: lead.business_name,
           startTime,
           endTime,
           durationMinutes: duration,
