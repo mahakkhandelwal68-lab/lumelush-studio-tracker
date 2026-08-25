@@ -310,7 +310,7 @@ function MeetingCard({
             </span>
           </p>
 
-          <p className="mt-1.5">
+          <p className="mt-1.5 flex flex-wrap items-center gap-2">
             {meeting.location_type === "google_meet" ? (
               meeting.location_detail ? (
                 <a
@@ -333,6 +333,11 @@ function MeetingCard({
             ) : (
               <span className="data-num text-xs text-ink-dim">
                 📞 Phone call{meeting.location_detail ? ` · ${meeting.location_detail}` : ""}
+              </span>
+            )}
+            {meeting.location_type === "google_meet" && meeting.guest_email && (
+              <span className="data text-xs text-ink-faint">
+                Invited: {meeting.guest_email}
               </span>
             )}
           </p>
