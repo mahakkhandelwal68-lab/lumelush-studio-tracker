@@ -38,7 +38,6 @@ export interface MeetingCount {
 
 interface Consultant {
   id: string;
-  full_name: string;
 }
 
 /** The sheet tabs, in the order a caller works through them. */

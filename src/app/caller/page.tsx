@@ -31,9 +31,12 @@ export default async function CallerDashboard() {
       .eq("assigned_caller_id", profile.id)
       .order("follow_up_at", { ascending: true, nullsFirst: false })
       .order("updated_at", { ascending: false }),
+    // Callers never see who the consultant is — the system assigns whoever
+    // is free automatically, so only the id (needed to check availability)
+    // is fetched, never the name.
     supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id")
       .eq("role", "consultant")
       .eq("active", true),
     // Every meeting on this caller's leads — including follow-ups the

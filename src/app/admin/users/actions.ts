@@ -42,3 +42,24 @@ export async function setUserActive(profileId: string, active: boolean) {
 
   revalidatePath("/admin/users");
 }
+
+export async function deleteUser(profileId: string) {
+  const { profile: caller } = await requireProfile("admin");
+  if (caller.id === profileId) {
+    throw new Error("You can't delete your own account.");
+  }
+
+  const admin = createAdminClient();
+
+  // Delete the auth user first — profiles.id is a FK to auth.users, so this
+  // cascades the profile row too. If the auth user is already gone (edge
+  // case), fall back to deleting the profile row directly.
+  const { error } = await admin.auth.admin.deleteUser(profileId);
+  if (error && !/user not found/i.test(error.message)) {
+    throw new Error(error.message);
+  }
+
+  await admin.from("profiles").delete().eq("id", profileId);
+
+  revalidatePath("/admin/users");
+}

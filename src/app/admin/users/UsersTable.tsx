@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { UserRole } from "@/lib/supabase/types";
-import { inviteUser, setUserActive } from "@/app/admin/users/actions";
+import { inviteUser, setUserActive, deleteUser } from "@/app/admin/users/actions";
 
 interface Profile {
   id: string;
@@ -39,6 +39,23 @@ export function UsersTable({ profiles }: { profiles: Profile[] }) {
         await setUserActive(id, active);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to update user");
+      }
+    });
+  }
+
+  function handleDelete(id: string, fullName: string) {
+    if (
+      !window.confirm(
+        `Permanently delete ${fullName}'s account? This can't be undone.`
+      )
+    ) {
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await deleteUser(id);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to delete user");
       }
     });
   }
@@ -103,17 +120,26 @@ export function UsersTable({ profiles }: { profiles: Profile[] }) {
                 {p.email} &middot; {p.role}
               </p>
             </div>
-            <button
-              onClick={() => toggleActive(p.id, !p.active)}
-              disabled={isPending}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                p.active
-                  ? "border border-red-300 text-red-700 hover:bg-red-50"
-                  : "border border-green-300 text-green-700 hover:bg-green-50"
-              }`}
-            >
-              {p.active ? "Deactivate" : "Reactivate"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleActive(p.id, !p.active)}
+                disabled={isPending}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  p.active
+                    ? "border border-red-300 text-red-700 hover:bg-red-50"
+                    : "border border-green-300 text-green-700 hover:bg-green-50"
+                }`}
+              >
+                {p.active ? "Deactivate" : "Reactivate"}
+              </button>
+              <button
+                onClick={() => handleDelete(p.id, p.full_name)}
+                disabled={isPending}
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

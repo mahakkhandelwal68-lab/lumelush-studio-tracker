@@ -16,7 +16,6 @@ interface Lead {
 
 interface Consultant {
   id: string;
-  full_name: string;
 }
 
 export function BookingCard({

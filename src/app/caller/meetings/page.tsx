@@ -50,11 +50,12 @@ export default async function CallerMeetingsPage() {
   // restricts this to meetings tied to this caller's own leads — including
   // follow-ups the consultant booked — so no other caller's pipeline shows
   // up here regardless of who did the booking.
+  // Callers never see who the consultant is — the pipeline is handed off
+  // and the consultant is assigned automatically, so their identity isn't
+  // fetched here at all.
   const { data: meetings } = await supabase
     .from("meetings")
-    .select(
-      "*, leads(name, business_name, ref, phone, location), consultant:profiles!meetings_consultant_id_fkey(full_name)"
-    )
+    .select("*, leads(name, business_name, ref, phone, location)")
     .order("scheduled_start", { ascending: false });
 
   const all = meetings ?? [];
@@ -109,7 +110,6 @@ export default async function CallerMeetingsPage() {
               <thead>
                 <tr className="border-b border-edge">
                   <th className={COL_HEAD}>Lead</th>
-                  <th className={COL_HEAD}>Consultant</th>
                   <th className={COL_HEAD}>Scheduled</th>
                   <th className={COL_HEAD}>Attendance</th>
                   <th className={COL_HEAD}>Stage</th>
@@ -135,9 +135,6 @@ export default async function CallerMeetingsPage() {
                           {m.leads?.ref}
                           {m.leads?.name && m.leads?.business_name ? ` · ${m.leads.name}` : ""}
                         </p>
-                      </td>
-                      <td className="px-3 py-3 text-sm text-ink-dim">
-                        {m.consultant?.full_name ?? "—"}
                       </td>
                       <td className="data-num px-3 py-3 text-sm text-ink-dim">
                         {formatDateTime(m.scheduled_start)}
