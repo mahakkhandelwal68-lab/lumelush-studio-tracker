@@ -360,7 +360,7 @@ function MeetingCard({
           {meeting.context_notes && (
             <p className="mt-2 rounded-lg border border-edge bg-base px-3 py-2 text-xs text-ink-dim">
               <span className="data font-medium text-ink">
-                From {meeting.caller?.full_name ?? "the caller"}:
+                From {meeting.caller?.full_name ?? "outreach"}:
               </span>{" "}
               {meeting.context_notes}
             </p>

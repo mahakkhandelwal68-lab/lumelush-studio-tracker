@@ -12,6 +12,12 @@ interface Profile {
   active: boolean;
 }
 
+const ROLE_LABEL: Record<UserRole, string> = {
+  caller: "Outreach",
+  consultant: "Consultant",
+  admin: "Admin",
+};
+
 export function UsersTable({ profiles }: { profiles: Profile[] }) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -92,7 +98,7 @@ export function UsersTable({ profiles }: { profiles: Profile[] }) {
             onChange={(e) => setRole(e.target.value as UserRole)}
             className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
           >
-            <option value="caller">Outbound Caller</option>
+            <option value="caller">Outreach</option>
             <option value="consultant">Sales Consultant</option>
             <option value="admin">Admin</option>
           </select>
@@ -117,7 +123,7 @@ export function UsersTable({ profiles }: { profiles: Profile[] }) {
             <div>
               <p className="text-sm font-medium text-gray-900">{p.full_name}</p>
               <p className="text-xs text-gray-500">
-                {p.email} &middot; {p.role}
+                {p.email} &middot; {ROLE_LABEL[p.role]}
               </p>
             </div>
             <div className="flex items-center gap-2">

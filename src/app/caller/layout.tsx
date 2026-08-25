@@ -29,7 +29,7 @@ export default async function CallerLayout({
             <BrandMark />
             <span className="hidden h-5 w-px bg-edge-strong sm:block" />
             <span className="data hidden text-xs font-medium tracking-widest text-ink-faint uppercase sm:block">
-              Outbound Caller
+              Outreach
             </span>
           </div>
 

@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
       <div>
         <h2 className="text-lg font-semibold text-gray-900">Users</h2>
         <p className="text-sm text-gray-500">
-          Invite callers and consultants, and deactivate accounts here. No
+          Invite outreach and consultants, and deactivate accounts here. No
           public signup exists &mdash; this is the only way accounts get
           created.
         </p>

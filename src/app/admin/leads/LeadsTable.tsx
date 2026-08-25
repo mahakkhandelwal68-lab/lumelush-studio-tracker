@@ -91,7 +91,7 @@ export function LeadsTable({
       <Card>
         <CardHeader
           title="Add a lead"
-          subtitle="These columns are what callers see in their sheet."
+          subtitle="These columns are what outreach see in their sheet."
         />
         <form onSubmit={handleCreate} className="px-5 py-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
