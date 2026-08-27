@@ -42,7 +42,7 @@ export default async function ConsultantAvailabilityPage() {
         </h1>
         <p className="mt-1 text-sm text-ink-dim">
           Next {AVAILABILITY_HORIZON_DAYS} days only. A day with no hours set
-          is open all day by default — set hours only to narrow it down.
+          is not available — add a slot to open it up.
         </p>
       </div>
 

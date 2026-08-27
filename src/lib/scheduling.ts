@@ -17,8 +17,9 @@ export const MEETING_LENGTH_OPTIONS = [30, 45, 60, 90] as const;
  * starting today. Nothing is bookable beyond this horizon. */
 export const AVAILABILITY_HORIZON_DAYS = 10;
 
-/** A consultant with no explicit hours on a day is available all day. */
-export const DEFAULT_AVAILABLE_WHEN_UNSET = true;
+/** A consultant with no explicit hours on a day is NOT available — hours
+ * have to be set for a day to be bookable at all. */
+export const DEFAULT_AVAILABLE_WHEN_UNSET = false;
 
 /** Hard cap on how many meetings one consultant can hold in a single day. */
 export const MAX_MEETINGS_PER_DAY = 8;
@@ -74,10 +75,9 @@ export function freeStartTimes(
 
 /**
  * Expands a consultant's explicit windows across `dayKeys` (each
- * "YYYY-MM-DD" in the business timezone), filling in a full 9am-8pm window
- * on any day that has no explicit hours set at all. A day with even one
- * explicit window uses only what's explicitly set — the default only
- * applies when the day is completely empty.
+ * "YYYY-MM-DD" in the business timezone). A day with no explicit hours set
+ * contributes nothing — it's simply not bookable until the consultant adds
+ * a slot.
  */
 export function windowsWithDefaults(
   explicitWindows: Interval[],

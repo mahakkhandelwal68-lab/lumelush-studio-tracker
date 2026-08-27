@@ -82,152 +82,90 @@ export async function removeWindow(windowId: string) {
   revalidatePath("/consultant/availability");
 }
 
-/**
- * Toggles exactly one clock hour of availability on `dayKey` (the calendar
- * grid's click target). Correctly splits, shrinks, merges or deletes the
- * underlying availability_windows rows so the rest of the day is untouched
- * — clicking one cell only ever changes that one hour. A day with zero
- * explicit windows is treated as open all day (the same default the
- * booking flow uses); toggling an hour off there materializes the
- * remaining hours as real windows. Refuses to touch an hour that already
- * has a meeting booked in it.
- */
-export async function toggleDayHour(dayKey: string, hour: number) {
-  const { supabase, profile } = await requireProfile("consultant");
+function minToHHMM(min: number) {
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+}
 
-  if (hour < DAY_START_HOUR || hour >= DAY_END_HOUR) {
-    throw new Error("Outside business hours");
-  }
+/**
+ * Replaces a whole day's availability in one shot — the sole way the
+ * availability editor's drag-to-set sliders and "+ Add slot" persist
+ * changes, so an edit gesture is always one round trip.
+ *
+ * `ranges` are minute-of-day boundaries within the working day (e.g.
+ * `[{startMin: 540, endMin: 780}]` for 09:00–13:00). An empty array means
+ * "day off" — since a day with no explicit windows is simply not available
+ * (see DEFAULT_AVAILABLE_WHEN_UNSET in scheduling.ts), deleting every row
+ * for the day already represents that correctly.
+ */
+export async function setDayWindows(
+  dayKey: string,
+  ranges: { startMin: number; endMin: number }[]
+) {
+  const { supabase, profile } = await requireProfile("consultant");
 
   const dayStartIso = inputValueToISO(`${dayKey}T00:00`);
   if (isInsideLockWindow(dayStartIso)) {
     throw new Error("Today and tomorrow are locked — request a change from admin.");
   }
 
-  const dayEndIso = inputValueToISO(`${nextDayKey(dayKey)}T00:00`);
-  const hourStartIso = inputValueToISO(`${dayKey}T${pad2(hour)}:00`);
-  const hourEndIso = inputValueToISO(`${dayKey}T${pad2(hour + 1)}:00`);
-  const hourStart = new Date(hourStartIso).getTime();
-  const hourEnd = new Date(hourEndIso).getTime();
-
-  const [{ data: existing }, { data: dayMeetings }] = await Promise.all([
-    supabase
-      .from("availability_windows")
-      .select("id, start_time, end_time")
-      .eq("consultant_id", profile.id)
-      .gte("start_time", dayStartIso)
-      .lt("start_time", dayEndIso),
-    supabase
-      .from("meetings")
-      .select("scheduled_start, scheduled_end")
-      .eq("consultant_id", profile.id)
-      .gte("scheduled_start", dayStartIso)
-      .lt("scheduled_start", dayEndIso),
-  ]);
-
-  const hourHasMeeting = (dayMeetings ?? []).some(
-    (m) =>
-      new Date(m.scheduled_start).getTime() < hourEnd &&
-      new Date(m.scheduled_end).getTime() > hourStart
-  );
-  if (hourHasMeeting) {
-    throw new Error("A meeting is booked in that hour.");
+  const dayStartMin = DAY_START_HOUR * 60;
+  const dayEndMin = DAY_END_HOUR * 60;
+  for (const r of ranges) {
+    if (
+      r.startMin < dayStartMin ||
+      r.endMin > dayEndMin ||
+      r.startMin >= r.endMin
+    ) {
+      throw new Error("Invalid hours");
+    }
   }
 
-  const windows = (existing ?? []).map((w) => ({
-    id: w.id,
-    start: new Date(w.start_time).getTime(),
-    end: new Date(w.end_time).getTime(),
-  }));
-  const hasExplicit = windows.length > 0;
+  const dayEndIso = inputValueToISO(`${nextDayKey(dayKey)}T00:00`);
 
-  const currentlyAvailable = hasExplicit
-    ? windows.some((w) => w.start <= hourStart && w.end >= hourEnd)
-    : true; // no explicit hours set -> default open all day
+  const { data: dayMeetings, error: meetingsError } = await supabase
+    .from("meetings")
+    .select("scheduled_start, scheduled_end")
+    .eq("consultant_id", profile.id)
+    .gte("scheduled_start", dayStartIso)
+    .lt("scheduled_start", dayEndIso);
+  if (meetingsError) throw new Error(meetingsError.message);
 
-  if (currentlyAvailable) {
-    // Remove just this hour: shrink, split, or delete whichever window(s)
-    // cover it.
-    for (const w of windows) {
-      if (w.start >= hourEnd || w.end <= hourStart) continue;
-
-      const keepsBefore = w.start < hourStart;
-      const keepsAfter = w.end > hourEnd;
-
-      if (!keepsBefore && !keepsAfter) {
-        await supabase.from("availability_windows").delete().eq("id", w.id);
-      } else if (keepsBefore && !keepsAfter) {
-        await supabase
-          .from("availability_windows")
-          .update({ end_time: hourStartIso })
-          .eq("id", w.id);
-      } else if (!keepsBefore && keepsAfter) {
-        await supabase
-          .from("availability_windows")
-          .update({ start_time: hourEndIso })
-          .eq("id", w.id);
-      } else {
-        await supabase
-          .from("availability_windows")
-          .update({ end_time: hourStartIso })
-          .eq("id", w.id);
-        await supabase.from("availability_windows").insert({
-          consultant_id: profile.id,
-          start_time: hourEndIso,
-          end_time: new Date(w.end).toISOString(),
-        });
-      }
+  // Every existing meeting must still fall inside one of the new ranges —
+  // otherwise this edit would silently strand a booked meeting outside its
+  // own availability.
+  for (const m of dayMeetings ?? []) {
+    const mStart = new Date(m.scheduled_start).getTime();
+    const mEnd = new Date(m.scheduled_end).getTime();
+    const covered = ranges.some((r) => {
+      const rStart = new Date(inputValueToISO(`${dayKey}T${minToHHMM(r.startMin)}`)).getTime();
+      const rEnd = new Date(inputValueToISO(`${dayKey}T${minToHHMM(r.endMin)}`)).getTime();
+      return rStart <= mStart && rEnd >= mEnd;
+    });
+    if (!covered) {
+      throw new Error(
+        "There's a meeting booked outside those hours — move it first or pick different hours."
+      );
     }
+  }
 
-    if (!hasExplicit) {
-      // Default-open day: materialize the rest of the day minus this hour.
-      const inserts: { consultant_id: string; start_time: string; end_time: string }[] = [];
-      if (hour > DAY_START_HOUR) {
-        inserts.push({
-          consultant_id: profile.id,
-          start_time: inputValueToISO(`${dayKey}T${pad2(DAY_START_HOUR)}:00`),
-          end_time: hourStartIso,
-        });
-      }
-      if (hour + 1 < DAY_END_HOUR) {
-        inserts.push({
-          consultant_id: profile.id,
-          start_time: hourEndIso,
-          end_time: inputValueToISO(`${dayKey}T${pad2(DAY_END_HOUR)}:00`),
-        });
-      }
-      if (inserts.length > 0) {
-        await supabase.from("availability_windows").insert(inserts);
-      }
-    }
-  } else {
-    // Add just this hour, merging with whatever it touches.
-    const touchingBefore = windows.find((w) => w.end === hourStart);
-    const touchingAfter = windows.find((w) => w.start === hourEnd);
+  const { error: deleteError } = await supabase
+    .from("availability_windows")
+    .delete()
+    .eq("consultant_id", profile.id)
+    .gte("start_time", dayStartIso)
+    .lt("start_time", dayEndIso);
+  if (deleteError) throw new Error(deleteError.message);
 
-    if (touchingBefore && touchingAfter) {
-      await supabase
-        .from("availability_windows")
-        .update({ end_time: new Date(touchingAfter.end).toISOString() })
-        .eq("id", touchingBefore.id);
-      await supabase.from("availability_windows").delete().eq("id", touchingAfter.id);
-    } else if (touchingBefore) {
-      await supabase
-        .from("availability_windows")
-        .update({ end_time: hourEndIso })
-        .eq("id", touchingBefore.id);
-    } else if (touchingAfter) {
-      await supabase
-        .from("availability_windows")
-        .update({ start_time: hourStartIso })
-        .eq("id", touchingAfter.id);
-    } else {
-      await supabase.from("availability_windows").insert({
-        consultant_id: profile.id,
-        start_time: hourStartIso,
-        end_time: hourEndIso,
-      });
-    }
+  if (ranges.length > 0) {
+    const rows = ranges.map((r) => ({
+      consultant_id: profile.id,
+      start_time: inputValueToISO(`${dayKey}T${minToHHMM(r.startMin)}`),
+      end_time: inputValueToISO(`${dayKey}T${minToHHMM(r.endMin)}`),
+    }));
+    const { error: insertError } = await supabase
+      .from("availability_windows")
+      .insert(rows);
+    if (insertError) throw new Error(insertError.message);
   }
 
   revalidatePath("/consultant/availability");
