@@ -70,9 +70,12 @@ export default async function CallerLayout({
     .join("");
 
   return (
-    <div className="sdr-app" data-theme="light">
+    <div className="sdr-app" data-theme="light" suppressHydrationWarning>
       {/* Sets the real theme before first paint, so switching to dark
-          earlier doesn't flash light on the next load. */}
+          earlier doesn't flash light on the next load. This deliberately
+          diverges from the server-rendered "light" default — that's the
+          point, so hydration-mismatch warnings for this attribute are
+          suppressed rather than a bug to fix. */}
       <script
         dangerouslySetInnerHTML={{
           __html: `try{var t=localStorage.getItem("sdr-theme");if(t)document.currentScript.closest(".sdr-app").setAttribute("data-theme",t);}catch(e){}`,

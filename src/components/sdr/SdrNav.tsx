@@ -2,13 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DashboardIcon, MeetingsIcon, PlaybookIcon, ChatIcon } from "@/components/sdr/icons";
+import {
+  DashboardIcon,
+  LeadsIcon,
+  MeetingsIcon,
+  PlaybookIcon,
+  ChatIcon,
+  ReportsIcon,
+  SettingsIcon,
+} from "@/components/sdr/icons";
 
 const NAV = [
   { href: "/caller", label: "Dashboard", icon: DashboardIcon, exact: true },
+  { href: "/caller/leads", label: "Leads", icon: LeadsIcon, exact: false },
   { href: "/caller/meetings", label: "Meetings", icon: MeetingsIcon, exact: false },
   { href: "/caller/playbook", label: "Playbook", icon: PlaybookIcon, exact: false },
   { href: "/caller/chat", label: "Chat", icon: ChatIcon, exact: false },
+  { href: "/caller/reports", label: "Reports", icon: ReportsIcon, exact: false },
+  { href: "/caller/settings", label: "Settings", icon: SettingsIcon, exact: false },
 ];
 
 export function SdrNav() {

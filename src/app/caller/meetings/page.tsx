@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth";
 import { Badge, Card, CardHeader, EmptyState } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
 import { MeetingLinkCell } from "@/app/caller/MeetingLinkCell";
+import { StatCard } from "@/components/sdr/StatCard";
 import type { MeetingResult } from "@/lib/supabase/types";
 
 const COL_HEAD =
@@ -81,10 +82,10 @@ export default async function CallerMeetingsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total meetings" value={all.length} />
-        <StatCard label="Upcoming" value={upcomingCount} />
-        <StatCard label="Onboarded" value={onboardedCount} />
-        <StatCard label="No-shows" value={noShowCount} />
+        <StatCard tone="blue" icon={<CalendarGlyph />} label="Total meetings" value={all.length} />
+        <StatCard tone="purple" icon={<CalendarGlyph />} label="Upcoming" value={upcomingCount} />
+        <StatCard tone="green" icon={<CalendarGlyph />} label="Onboarded" value={onboardedCount} />
+        <StatCard tone="red" icon={<CalendarGlyph />} label="No-shows" value={noShowCount} />
       </div>
 
       <Card>
@@ -168,13 +169,11 @@ export default async function CallerMeetingsPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function CalendarGlyph() {
   return (
-    <div className="rounded-2xl border border-edge bg-raised p-4">
-      <p className="data text-xs font-medium tracking-wide text-ink-faint uppercase">
-        {label}
-      </p>
-      <p className="data-num mt-1 text-2xl font-semibold text-ink">{value}</p>
-    </div>
+    <svg viewBox="0 0 20 20" className="size-4.5" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="4.5" width="14" height="12" rx="2" />
+      <path d="M3 8.5h14M7 3v3M13 3v3" strokeLinecap="round" />
+    </svg>
   );
 }
