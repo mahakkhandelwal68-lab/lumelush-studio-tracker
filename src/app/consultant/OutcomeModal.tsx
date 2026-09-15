@@ -40,7 +40,7 @@ const OUTCOMES: {
   {
     value: "no_show",
     label: "No show",
-    desc: "Didn't turn up. Goes back to Sales Command Center to re-book.",
+    desc: "Didn't turn up. Goes back to the SDR to re-book.",
   },
 ];
 
@@ -178,7 +178,7 @@ export function OutcomeModal({
         {result === "onboarded" && (
           <Field
             label="Package"
-            hint="Which package they signed up for — shown on Sales Command Center's tracker."
+            hint="Which package they signed up for — shown on the SDR's tracker."
           >
             <Input
               value={packageName}
