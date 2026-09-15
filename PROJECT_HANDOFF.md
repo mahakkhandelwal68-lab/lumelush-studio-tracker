@@ -77,7 +77,7 @@ Environment Variables), then trigger a redeploy yourself once they confirm.
 |---|---|---|---|
 | admin | `mahak@lumelush.com` | `Lumelush@124` | Mahak K |
 | admin | `ankit@lumelush.com` | `Lumelush@124` | Ankit P |
-| consultant | `sarah@lumelush.com` | `lumelush@123` | Sarah |
+| consultant | `sarah@lumelush.com` | `Lumelush@124` | Sarah |
 | consultant | `ruhi@lumelush.com` | `Lumelush@124` | Ruhi |
 | consultant | `akhil@lumelush.com` | `Lumelush@124` | Akhil |
 | consultant | `sumaya@lumelush.com` | `Lumelush@124` | Sumaya |
@@ -87,8 +87,8 @@ Environment Variables), then trigger a redeploy yourself once they confirm.
 | caller | `umang@lumelush.com` | `Lumelush@124` | Umang |
 
 Note Karan's password is the one deliberate exception to the shared
-`Lumelush@124` convention. Sarah's password was never reset to the new
-convention and is still the older `lumelush@123`. These are **not** the
+`Lumelush@124` convention — every other account, including Sarah's (reset
+this session from the older `lumelush@123`), uses it. These are **not** the
 emails baked into `scripts/seed.ts` (which still has older placeholder
 addresses like `admin@lumelush.com`/`caller@lumelush.com`) — accounts were
 created/renamed directly via the Supabase Auth Admin API
