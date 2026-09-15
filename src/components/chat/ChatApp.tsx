@@ -16,7 +16,7 @@ export interface ChatContact {
 
 const ROLE_LABEL: Record<UserRole, string> = {
   admin: "Admin",
-  caller: "Outreach",
+  caller: "Sales Command Center",
   consultant: "Consultant",
 };
 

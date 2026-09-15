@@ -13,7 +13,7 @@ interface Profile {
 }
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  caller: "Outreach",
+  caller: "Sales Command Center",
   consultant: "Consultant",
   admin: "Admin",
 };
@@ -98,7 +98,7 @@ export function UsersTable({ profiles }: { profiles: Profile[] }) {
             onChange={(e) => setRole(e.target.value as UserRole)}
             className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
           >
-            <option value="caller">Outreach</option>
+            <option value="caller">Sales Command Center</option>
             <option value="consultant">Sales Consultant</option>
             <option value="admin">Admin</option>
           </select>

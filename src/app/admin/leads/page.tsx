@@ -20,8 +20,9 @@ export default async function AdminLeadsPage() {
       <div>
         <h1 className="font-display text-2xl leading-tight text-ink">Leads</h1>
         <p className="mt-1 text-sm text-ink-dim">
-          Assign leads to outreach manually, or auto-distribute unassigned leads
-          to whichever active outreach member currently has the fewest.
+          Assign leads to Sales Command Center manually, or auto-distribute
+          unassigned leads to whichever active Sales Command Center member
+          currently has the fewest.
         </p>
       </div>
       <LeadsTable leads={leads ?? []} callers={callers ?? []} />
