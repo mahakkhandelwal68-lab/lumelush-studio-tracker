@@ -6,6 +6,7 @@ const NAV = [
   { href: "/consultant", label: "Meetings" },
   { href: "/consultant/availability", label: "Availability" },
   { href: "/consultant/tools", label: "Tools" },
+  { href: "/consultant/chat", label: "Chat" },
 ];
 
 export default async function ConsultantLayout({

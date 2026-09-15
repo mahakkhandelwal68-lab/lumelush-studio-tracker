@@ -24,6 +24,9 @@ export type LeadRequest = Tables["lead_requests"]["Row"];
 export type AvailabilityChangeRequest =
   Tables["availability_change_requests"]["Row"];
 export type ToolResource = Tables["tool_resources"]["Row"];
+export type ChatConversationKind = Enums["chat_conversation_kind"];
+export type ChatConversation = Tables["chat_conversations"]["Row"];
+export type ChatMessage = Tables["chat_messages"]["Row"];
 
 /** Shape stored in tool_resources.links (a jsonb array). */
 export interface ToolLink {

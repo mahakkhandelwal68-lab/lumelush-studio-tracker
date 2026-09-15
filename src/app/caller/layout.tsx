@@ -6,6 +6,7 @@ const NAV = [
   { href: "/caller", label: "Dashboard" },
   { href: "/caller/meetings", label: "Booked Meetings" },
   { href: "/caller/playbook", label: "Playbook" },
+  { href: "/caller/chat", label: "Chat" },
 ];
 
 export default async function CallerLayout({
