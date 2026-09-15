@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { BrandMark } from "@/components/BrandMark";
 import { PresenceBeacon } from "@/components/PresenceBeacon";
+import { IdleAutoLogout } from "@/components/IdleAutoLogout";
+import { getTodayActiveMs, formatDuration } from "@/lib/activeTime";
 
 const NAV = [
   { href: "/consultant", label: "Meetings" },
@@ -16,6 +18,7 @@ export default async function ConsultantLayout({
   children: React.ReactNode;
 }) {
   const { profile } = await requireProfile("consultant");
+  const activeMs = await getTodayActiveMs(profile.id);
 
   const initials = profile.full_name
     .split(" ")
@@ -26,6 +29,7 @@ export default async function ConsultantLayout({
   return (
     <div className="min-h-screen">
       <PresenceBeacon userId={profile.id} />
+      <IdleAutoLogout userId={profile.id} />
       <header className="sticky top-0 z-30 border-b border-edge bg-base/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-4">
@@ -41,7 +45,9 @@ export default async function ConsultantLayout({
               <p className="data text-sm leading-tight text-ink">
                 {profile.full_name}
               </p>
-              <p className="data text-xs text-ink-faint">{profile.email}</p>
+              <p className="data text-xs text-ink-faint">
+                {profile.email} · Active {formatDuration(activeMs)}
+              </p>
             </div>
             <span
               className="data grid size-9 place-items-center rounded-full border text-xs font-semibold"

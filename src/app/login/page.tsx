@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { startSession } from "@/lib/sessionTracking";
 import { BrandMark } from "@/components/BrandMark";
 import { Button, Field, Input } from "@/components/ui";
 
@@ -19,7 +20,7 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -29,6 +30,11 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       return;
+    }
+
+    // Best-effort — a hiccup here should never block getting into the app.
+    if (data.user) {
+      startSession(data.user.id).catch(() => {});
     }
 
     router.replace("/");

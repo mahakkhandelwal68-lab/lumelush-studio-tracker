@@ -1,9 +1,11 @@
 import { requireProfile } from "@/lib/auth";
 import { BrandMark } from "@/components/BrandMark";
 import { PresenceBeacon } from "@/components/PresenceBeacon";
+import { IdleAutoLogout } from "@/components/IdleAutoLogout";
 import { SdrNav } from "@/components/sdr/SdrNav";
 import { ThemeToggle } from "@/components/sdr/ThemeToggle";
 import { getCallerHeaderStats } from "@/lib/callerStats";
+import { getTodayActiveMs, formatDuration } from "@/lib/activeTime";
 
 const DAILY_CALL_TARGET = 25;
 
@@ -27,6 +29,7 @@ export default async function CallerLayout({
 }) {
   const { profile } = await requireProfile("caller");
   const stats = await getCallerHeaderStats(profile.id);
+  const activeMs = await getTodayActiveMs(profile.id);
 
   const initials = profile.full_name
     .split(" ")
@@ -47,6 +50,7 @@ export default async function CallerLayout({
         }}
       />
       <PresenceBeacon userId={profile.id} />
+      <IdleAutoLogout userId={profile.id} />
 
       <div className="flex h-full">
         <aside className="sdr-sidebar flex w-[104px] shrink-0 flex-col overflow-y-auto">
@@ -108,6 +112,9 @@ export default async function CallerLayout({
                 <div className="hidden sm:block">
                   <p className="data text-sm leading-tight text-ink">
                     {profile.full_name}
+                  </p>
+                  <p className="text-[11px] text-ink-faint">
+                    Active today: {formatDuration(activeMs)}
                   </p>
                   <form action="/auth/signout" method="post">
                     <button
