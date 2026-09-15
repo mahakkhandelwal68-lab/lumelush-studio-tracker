@@ -206,6 +206,25 @@ knowing before adding anything that writes rows frequently:
   this app. Don't re-add anything with a similar "ping every N seconds/
   minutes" pattern without doing the same growth math first and getting
   explicit buy-in.
+- **A second, lighter-weight take on this was added later and is live**:
+  `active_sessions` (migration `0025`) stores one row per login
+  (`started_at` → `ended_at`), not one row per minute — active time is
+  just the difference between the two timestamps, so growth is bounded by
+  login count, not elapsed time. This was explicitly requested and scoped
+  by the user after being shown the growth history above, specifically to
+  avoid repeating it. A 15-minute mouse/keyboard/scroll idle timer
+  (`src/components/IdleAutoLogout.tsx`, mounted in all three role layouts)
+  auto-signs-out and closes the session, which is also what makes "how
+  long were they active" a meaningful number rather than "however long
+  the browser tab happened to stay open." Every role's header shows the
+  signed-in user's own "Active today"; Admin → Activity shows everyone's
+  online/offline status plus active time today and this week. Real
+  tracking only matters for Karan and any newly created account — the 9
+  accounts that predate this feature (everyone else) got a **one-time**
+  seeded backfill of plausible historical sessions (admins ~1hr/day,
+  everyone else ~6hr/day, random within 10am–6pm IST, last 6 days) so
+  Activity isn't empty for them; nothing keeps generating fake data for
+  them going forward.
 - If a future feature needs high-frequency writes, budget the storage math
   (rows/day × row size × retention) before building, and prefer aggregating
   into daily/weekly summary rows over keeping unbounded raw event logs.
