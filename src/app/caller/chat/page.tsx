@@ -20,11 +20,15 @@ export default async function CallerChatPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1">
+    <div className="flex h-full flex-col gap-6 lg:flex-row lg:items-stretch">
+      {/* Fixed vh height when stacked (below lg) so Quick Tools' own
+          natural height can't squeeze Chat down to nothing in a column
+          flex layout; at lg+ it switches to flex-1 to fill the row. */}
+      <div className="h-[65vh] min-w-0 lg:h-auto lg:min-h-0 lg:flex-1">
         <ChatApp
           currentUser={{ id: profile.id, full_name: profile.full_name }}
           contacts={contacts ?? []}
+          heightClassName="h-full"
         />
       </div>
       <QuickToolsPanel

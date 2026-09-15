@@ -35,9 +35,17 @@ type Selection = { kind: "team" } | { kind: "dm"; contact: ChatContact };
 export function ChatApp({
   currentUser,
   contacts,
+  // Admin/consultant chat pages still use the older document-scrolling
+  // layout, where only a fixed viewport-relative height keeps the message
+  // box on screen. The caller (SDR) layout is a locked-viewport shell with
+  // its own internal scroll region, so it passes "h-full" instead — using
+  // that same fixed height there would size against the wrong box and can
+  // push the input off-screen if the header wraps to more than one row.
+  heightClassName = "h-[calc(100vh-160px)]",
 }: {
   currentUser: { id: string; full_name: string };
   contacts: ChatContact[];
+  heightClassName?: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [selection, setSelection] = useState<Selection>({ kind: "team" });
@@ -164,7 +172,7 @@ export function ChatApp({
       : contacts.find((c) => c.id === id)?.full_name ?? "Unknown";
 
   return (
-    <Card className="grid h-[calc(100vh-160px)] grid-cols-[220px_1fr] overflow-hidden">
+    <Card className={cn("grid grid-cols-[220px_1fr] overflow-hidden", heightClassName)}>
       <aside className="flex flex-col overflow-y-auto border-r border-edge">
         <button
           onClick={() => setSelection({ kind: "team" })}

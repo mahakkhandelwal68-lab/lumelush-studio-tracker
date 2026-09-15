@@ -35,7 +35,7 @@ export default async function CallerLayout({
     .join("");
 
   return (
-    <div className="sdr-app" data-theme="light" suppressHydrationWarning>
+    <div className="sdr-app h-screen overflow-hidden" data-theme="light" suppressHydrationWarning>
       {/* Sets the real theme before first paint, so switching to dark
           earlier doesn't flash light on the next load. This deliberately
           diverges from the server-rendered "light" default — that's the
@@ -48,8 +48,8 @@ export default async function CallerLayout({
       />
       <PresenceBeacon userId={profile.id} />
 
-      <div className="flex min-h-screen">
-        <aside className="sdr-sidebar flex w-[104px] shrink-0 flex-col">
+      <div className="flex h-full">
+        <aside className="sdr-sidebar flex w-[104px] shrink-0 flex-col overflow-y-auto">
           <div className="flex items-center justify-center border-b px-2 py-4" style={{ borderColor: "var(--border-subtle)" }}>
             <BrandMark compact />
           </div>
@@ -64,7 +64,7 @@ export default async function CallerLayout({
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-full min-w-0 flex-1 flex-col">
           <header
             className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-3.5"
             style={{ borderColor: "var(--border-subtle)", background: "var(--surface-raised)" }}
@@ -122,7 +122,7 @@ export default async function CallerLayout({
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-6">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">{children}</main>
         </div>
       </div>
     </div>
