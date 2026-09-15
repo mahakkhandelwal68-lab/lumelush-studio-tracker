@@ -515,6 +515,7 @@ export type Database = {
           p_consultant_id: string
           p_context_notes: string
           p_duration_minutes: number
+          p_guest_email?: string
           p_lead_id: string
           p_location_detail?: string
           p_location_type?: string

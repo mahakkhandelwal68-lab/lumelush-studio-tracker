@@ -51,9 +51,17 @@ export async function logCall(input: {
   revalidatePath("/caller");
 }
 
+// Temporary business rule: Karan's bookings all go to Sarah specifically,
+// instead of the usual load-balanced auto-assign. Keyed by caller email
+// since that's stable across account recreation; remove when no longer needed.
+const FORCED_CONSULTANT_BY_CALLER_EMAIL: Record<string, string> = {
+  "karan@lumelush.com": "sarah@lumelush.com",
+};
+
 /**
  * The caller never picks a consultant — the system assigns whoever's free at
- * the chosen time with the lightest current load (see book_meeting_auto).
+ * the chosen time with the lightest current load (see book_meeting_auto),
+ * except for callers in FORCED_CONSULTANT_BY_CALLER_EMAIL above.
  */
 export async function bookMeeting(input: {
   leadId: string;
@@ -69,26 +77,56 @@ export async function bookMeeting(input: {
   /** Lead's email to invite — only used when locationType is "google_meet". */
   guestEmail: string;
 }) {
-  await requireProfile("caller");
+  const { profile } = await requireProfile("caller");
   const supabase = await createClient();
 
-  const { data: meeting, error } = await supabase.rpc("book_meeting_auto", {
-    p_lead_id: input.leadId,
-    p_start: input.startTime,
-    p_duration_minutes: input.durationMinutes,
-    // The generated RPC types mark params without a SQL DEFAULT as required
-    // non-null strings, even though Postgres accepts NULL for them fine —
-    // cast rather than change what's actually sent.
-    p_context_notes: (input.contextNotes || null) as unknown as string,
-    p_location_type: input.locationType,
-    p_location_detail: (input.locationType === "phone"
-      ? input.locationDetail || null
-      : null) as unknown as string,
-    p_guest_email: (input.locationType === "google_meet"
-      ? input.guestEmail || null
-      : null) as unknown as string,
-  });
-  if (error) throw new Error(error.message);
+  const contextNotes = (input.contextNotes || null) as unknown as string;
+  const locationDetail = (input.locationType === "phone"
+    ? input.locationDetail || null
+    : null) as unknown as string;
+  const guestEmail = (input.locationType === "google_meet"
+    ? input.guestEmail || null
+    : null) as unknown as string;
+
+  const forcedConsultantEmail = FORCED_CONSULTANT_BY_CALLER_EMAIL[profile.email];
+
+  let meeting;
+  if (forcedConsultantEmail) {
+    const { data: consultant, error: consultantError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", forcedConsultantEmail)
+      .eq("active", true)
+      .single();
+    if (consultantError || !consultant) {
+      throw new Error("Assigned consultant not found or inactive");
+    }
+
+    const { data, error } = await supabase.rpc("book_meeting_at", {
+      p_lead_id: input.leadId,
+      p_consultant_id: consultant.id,
+      p_start: input.startTime,
+      p_duration_minutes: input.durationMinutes,
+      p_context_notes: contextNotes,
+      p_location_type: input.locationType,
+      p_location_detail: locationDetail,
+      p_guest_email: guestEmail,
+    });
+    if (error) throw new Error(error.message);
+    meeting = data;
+  } else {
+    const { data, error } = await supabase.rpc("book_meeting_auto", {
+      p_lead_id: input.leadId,
+      p_start: input.startTime,
+      p_duration_minutes: input.durationMinutes,
+      p_context_notes: contextNotes,
+      p_location_type: input.locationType,
+      p_location_detail: locationDetail,
+      p_guest_email: guestEmail,
+    });
+    if (error) throw new Error(error.message);
+    meeting = data;
+  }
 
   // Best-effort: generate the real Meet link and invite both parties. If this
   // fails or Google isn't configured yet, the booking still stands.

@@ -104,6 +104,29 @@ Admin can invite new accounts *and* permanently delete them (not just
 deactivate) from Admin → Users. Izhan (the original sole caller account) was
 permanently deleted this session and replaced by the 4 caller accounts above.
 
+## Temporary rule: Karan's bookings are pinned to Sarah
+
+Every other caller's bookings still go through `book_meeting_auto` (the
+usual load-balanced auto-assign across all consultants), but Karan's
+bookings are hard-coded to always land on Sarah specifically, via
+`FORCED_CONSULTANT_BY_CALLER_EMAIL` in
+[src/app/caller/actions.ts](src/app/caller/actions.ts) — keyed by caller
+email (`karan@lumelush.com` → `sarah@lumelush.com`) rather than a stored id,
+since email is stable across account recreation. This required adding a
+`p_guest_email` parameter to the `book_meeting_at` RPC (previously only
+`book_meeting_auto` had one), so Karan's bookings can still carry the
+client's email through to the Google Meet invite the same way everyone
+else's do — see `supabase/migrations/0024_book_meeting_at_guest_email.sql`.
+This is explicitly a "for now" rule the user asked for, not a permanent
+product decision — remove the map entry (or repoint it) when it's no longer
+needed. One caveat: the caller booking screen still shows combined
+availability across *all* consultants, so Karan can still pick a time where
+Sarah specifically isn't free — that booking will fail with "That time is
+outside the consultant's availability" rather than silently going to
+someone else. If that turns out to be a frequent annoyance, the fix would be
+scoping Karan's booking screen to only show Sarah's open slots — flag it if
+so, since that wasn't built.
+
 ## Consultant availability — redesigned, and a default behavior flip
 
 The Availability page (`src/app/consultant/availability/`) was rebuilt from a
