@@ -71,28 +71,38 @@ Environment Variables), then trigger a redeploy yourself once they confirm.
 
 ## Accounts
 
-Exactly 3 accounts exist, on the `lumelush.com` domain:
+10 accounts exist, on the `lumelush.com` domain:
 
 | Role | Email | Password | Display name |
 |---|---|---|---|
-| admin | `mahak@lumelush.com` | `lumelush@123` | Mahak Khandelwal |
-| caller | `izhan@lumelush.com` | `Izhan@lls5` | Izhan |
+| admin | `mahak@lumelush.com` | `Lumelush@124` | Mahak K |
+| admin | `ankit@lumelush.com` | `Lumelush@124` | Ankit P |
 | consultant | `sarah@lumelush.com` | `lumelush@123` | Sarah |
+| consultant | `ruhi@lumelush.com` | `Lumelush@124` | Ruhi |
+| consultant | `akhil@lumelush.com` | `Lumelush@124` | Akhil |
+| consultant | `sumaya@lumelush.com` | `Lumelush@124` | Sumaya |
+| caller | `udit@lumelush.com` | `Lumelush@124` | Udit |
+| caller | `purva@lumelush.com` | `Lumelush@124` | Purva |
+| caller | `karan@lumelush.com` | `Karanm@1509` | Karan |
+| caller | `umang@lumelush.com` | `Lumelush@124` | Umang |
 
-These are **not** the emails baked into `scripts/seed.ts` (which still has
-older placeholder addresses like `admin@lumelush.com`/`caller@lumelush.com`)
-— the live accounts were renamed after seeding via Supabase Auth Admin
-(`updateUserById`), not by re-seeding. Don't trust the seed script's emails as
-current; this table is the source of truth. The **role** "caller" is called
-**"Outreach"** everywhere in the UI (display-only rename — the DB role value,
-`/caller` URL, and internal code/column names are all still literally
-`caller`, unchanged).
+Note Karan's password is the one deliberate exception to the shared
+`Lumelush@124` convention. Sarah's password was never reset to the new
+convention and is still the older `lumelush@123`. These are **not** the
+emails baked into `scripts/seed.ts` (which still has older placeholder
+addresses like `admin@lumelush.com`/`caller@lumelush.com`) — accounts were
+created/renamed directly via the Supabase Auth Admin API
+(`createUser`/`updateUserById`), not by re-seeding. Don't trust the seed
+script's emails as current; this table is the source of truth. The **role**
+"caller" is called **"Outreach"** everywhere in the UI (display-only rename —
+the DB role value, `/caller` URL, and internal code/column names are all
+still literally `caller`, unchanged). Display names are deliberately
+first-name-only (no last names) per the user's own naming convention — keep
+new accounts consistent with that unless told otherwise.
 
 Admin can invite new accounts *and* permanently delete them (not just
-deactivate) from Admin → Users.
-
-There used to be more accounts (from an old seed script default of 3 callers
-+ 2 consultants + 2 admins) — deliberately deleted down to one of each role.
+deactivate) from Admin → Users. Izhan (the original sole caller account) was
+permanently deleted this session and replaced by the 4 caller accounts above.
 
 ## Consultant availability — redesigned, and a default behavior flip
 
