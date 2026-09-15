@@ -181,3 +181,76 @@ body {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ============================================================
+   SDR (caller) redesign — scoped shell + light/dark toggle.
+   Overrides the SAME base tokens the rest of the app already reads
+   (--surface-*, --text-*, --border-*), but only inside .sdr-app, so every
+   existing caller component (bg-raised, text-ink, border-edge, Badge,
+   Card, …) re-themes for free via normal CSS custom-property cascade,
+   without needing to touch those components, and no other role's pages
+   are affected since the override never reaches :root.
+   "dark" intentionally has no overrides here — it just inherits the
+   site's existing default dark palette from :root above.
+   ============================================================ */
+.sdr-app[data-theme="light"] {
+  --surface-base: #f5f7fb;
+  --surface-raised: #ffffff;
+  --surface-overlay: #f0f3f9;
+  --surface-hover: #e8ecf5;
+
+  --border-subtle: #e6e9f2;
+  --border-strong: #d6dbe8;
+
+  --text-primary: #16213d;
+  --text-secondary: #57617a;
+  --text-muted: #8a92a8;
+
+  --ring: 0 0 0 2px rgba(11, 123, 238, 0.35);
+}
+
+.sdr-app {
+  min-height: 100vh;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.sdr-app * {
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.sdr-sidebar {
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.sdr-nav-link {
+  color: var(--text-secondary);
+}
+.sdr-nav-link:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.sdr-nav-link[data-active="true"] {
+  background: rgba(11, 123, 238, 0.1);
+  color: var(--brand-blue);
+}
+.sdr-app[data-theme="dark"] .sdr-nav-link[data-active="true"] {
+  background: rgba(35, 191, 181, 0.14);
+  color: var(--brand-teal);
+}
+
+.sdr-stat-pill {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.sdr-tip {
+  background: rgba(63, 191, 143, 0.12);
+  border: 1px solid rgba(63, 191, 143, 0.35);
+  color: #1f8f63;
+}
+.sdr-app[data-theme="dark"] .sdr-tip {
+  color: var(--brand-mint);
+}
