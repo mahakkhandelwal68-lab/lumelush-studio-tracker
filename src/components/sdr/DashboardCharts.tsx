@@ -111,7 +111,12 @@ export function LeadStatusDonut({
               style={{ background: STATUS_COLORS[d.name] ?? "var(--border-strong)" }}
             />
             <span className="text-ink-dim">{d.name}</span>
-            <span className="data-num ml-auto font-medium text-ink">{d.value}</span>
+            <span className="data-num ml-auto font-medium text-ink">
+              {d.value}
+              {total > 0 && (
+                <span className="text-ink-faint"> ({Math.round((d.value / total) * 100)}%)</span>
+              )}
+            </span>
           </li>
         ))}
       </ul>

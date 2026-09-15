@@ -2,7 +2,11 @@ import { requireProfile } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { StatCard } from "@/components/sdr/StatCard";
 import { LeadStatusDonut } from "@/components/sdr/DashboardCharts";
-import { CallingActivityChart, PerformanceTrendChart } from "@/components/sdr/ReportsCharts";
+import {
+  CallingActivityChart,
+  ConversionFunnelChart,
+  PerformanceTrendChart,
+} from "@/components/sdr/ReportsCharts";
 
 const DISPLAY_TIMEZONE = process.env.NEXT_PUBLIC_DISPLAY_TIMEZONE || "Asia/Kolkata";
 
@@ -130,6 +134,13 @@ export default async function CallerReportsPage() {
 
   const bestDay = [...activityData].sort((a, b) => b.total - a.total)[0];
 
+  const funnelData = [
+    { name: "Calls Made", value: thisWeekCalls.length },
+    { name: "Connected", value: thisWeekConnected },
+    { name: "Interested", value: outcomeCounts.interested ?? 0 },
+    { name: "Meetings Booked", value: thisWeekMeetings.length },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -160,18 +171,11 @@ export default async function CallerReportsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card className="p-5">
-          <h2 className="font-display text-base text-ink">My Performance Trend</h2>
-          <p className="mb-2 text-xs text-ink-faint">Your outreach performance over time.</p>
-          <PerformanceTrendChart
-            data={activityData.map((d) => ({
-              day: d.day,
-              calls: d.total,
-              connected: d.connected,
-              meetings: d.meetings,
-            }))}
-          />
+          <h2 className="font-display text-base text-ink">Lead Conversion Funnel</h2>
+          <p className="mb-2 text-xs text-ink-faint">From calls to meetings, last 7 days.</p>
+          <ConversionFunnelChart data={funnelData} />
         </Card>
 
         <Card className="p-5">
@@ -201,6 +205,19 @@ export default async function CallerReportsPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-5">
+        <h2 className="font-display text-base text-ink">My Performance Trend</h2>
+        <p className="mb-2 text-xs text-ink-faint">Your outreach performance over time.</p>
+        <PerformanceTrendChart
+          data={activityData.map((d) => ({
+            day: d.day,
+            calls: d.total,
+            connected: d.connected,
+            meetings: d.meetings,
+          }))}
+        />
+      </Card>
 
       <Card className="p-5">
         <h2 className="font-display mb-3 text-base text-ink">Insights</h2>

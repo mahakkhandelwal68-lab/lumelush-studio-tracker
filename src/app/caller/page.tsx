@@ -197,7 +197,13 @@ export default async function CallerDashboard() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="p-5">
-          <h2 className="font-display text-base text-ink">Today&apos;s Activity</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-base text-ink">Today&apos;s Activity</h2>
+            <span className="flex items-center gap-1.5 text-xs text-ink-dim">
+              <span className="size-2 rounded-full" style={{ background: "#0b7bee" }} />
+              Calls Made
+            </span>
+          </div>
           <p className="mb-2 text-xs text-ink-faint">Your calling activity throughout the day.</p>
           {hourlyData.length === 0 ? (
             <p className="py-16 text-center text-sm text-ink-faint">
