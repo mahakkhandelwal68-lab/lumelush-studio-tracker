@@ -3,6 +3,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { PresenceBeacon } from "@/components/PresenceBeacon";
 import { SdrNav } from "@/components/sdr/SdrNav";
 import { ThemeToggle } from "@/components/sdr/ThemeToggle";
+import { getCallerHeaderStats } from "@/lib/callerStats";
 
 const DAILY_CALL_TARGET = 25;
 
@@ -24,44 +25,8 @@ export default async function CallerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { supabase, profile } = await requireProfile("caller");
-
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(startOfToday);
-  endOfToday.setDate(endOfToday.getDate() + 1);
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-
-  const [
-    { count: callsToday },
-    { count: meetingsThisWeek },
-    { count: callbacksDue },
-    { count: newLeads },
-  ] = await Promise.all([
-    supabase
-      .from("calls")
-      .select("*", { count: "exact", head: true })
-      .eq("caller_id", profile.id)
-      .gte("called_at", startOfToday.toISOString())
-      .lt("called_at", endOfToday.toISOString()),
-    supabase
-      .from("meetings")
-      .select("*", { count: "exact", head: true })
-      .eq("caller_id", profile.id)
-      .gte("created_at", weekAgo.toISOString()),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("assigned_caller_id", profile.id)
-      .eq("status", "callback")
-      .lt("follow_up_at", endOfToday.toISOString()),
-    supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .eq("assigned_caller_id", profile.id)
-      .eq("status", "new"),
-  ]);
+  const { profile } = await requireProfile("caller");
+  const stats = await getCallerHeaderStats(profile.id);
 
   const initials = profile.full_name
     .split(" ")
@@ -122,10 +87,10 @@ export default async function CallerLayout({
                   {DAILY_CALL_TARGET} calls
                 </span>
               </div>
-              <StatPill label="Calls Made" value={callsToday ?? 0} />
-              <StatPill label="Meetings Booked" value={meetingsThisWeek ?? 0} />
-              <StatPill label="Call Backs" value={callbacksDue ?? 0} />
-              <StatPill label="New Leads" value={newLeads ?? 0} />
+              <StatPill label="Calls Made" value={stats.callsToday} />
+              <StatPill label="Meetings Booked" value={stats.meetingsThisWeek} />
+              <StatPill label="Call Backs" value={stats.callbacksDue} />
+              <StatPill label="New Leads" value={stats.newLeads} />
 
               <ThemeToggle />
 

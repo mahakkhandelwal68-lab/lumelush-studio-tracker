@@ -1,52 +1,22 @@
 import { requireProfile } from "@/lib/auth";
 import { ChatApp } from "@/components/chat/ChatApp";
 import { QuickToolsPanel } from "@/components/sdr/QuickToolsPanel";
+import { getCallerHeaderStats } from "@/lib/callerStats";
 
 export default async function CallerChatPage() {
   const { supabase, profile } = await requireProfile("caller");
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(startOfToday);
-  endOfToday.setDate(endOfToday.getDate() + 1);
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-
-  const [
-    { data: contacts },
-    { count: callsToday },
-    { count: newLeads },
-    { count: meetingsThisWeek },
-    { count: callbacksDue },
-  ] = await Promise.all([
+  // Same 4 numbers the layout's header pills show — getCallerHeaderStats is
+  // wrapped in React's cache(), so this reuses the layout's DB round trip
+  // for this request instead of re-querying.
+  const [{ data: contacts }, stats] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name, role")
       .eq("active", true)
       .neq("id", profile.id)
       .order("full_name"),
-    supabase
-      .from("calls")
-      .select("id", { count: "exact", head: true })
-      .eq("caller_id", profile.id)
-      .gte("called_at", startOfToday.toISOString())
-      .lt("called_at", endOfToday.toISOString()),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("assigned_caller_id", profile.id)
-      .eq("status", "new"),
-    supabase
-      .from("meetings")
-      .select("id", { count: "exact", head: true })
-      .eq("caller_id", profile.id)
-      .gte("created_at", weekAgo.toISOString()),
-    supabase
-      .from("leads")
-      .select("id", { count: "exact", head: true })
-      .eq("assigned_caller_id", profile.id)
-      .eq("status", "callback")
-      .lt("follow_up_at", endOfToday.toISOString()),
+    getCallerHeaderStats(profile.id),
   ]);
 
   return (
@@ -59,10 +29,10 @@ export default async function CallerChatPage() {
       </div>
       <QuickToolsPanel
         stats={[
-          { label: "Calls Made", value: callsToday ?? 0 },
-          { label: "New Leads", value: newLeads ?? 0 },
-          { label: "Meetings Booked", value: meetingsThisWeek ?? 0 },
-          { label: "Callbacks", value: callbacksDue ?? 0 },
+          { label: "Calls Made", value: stats.callsToday },
+          { label: "New Leads", value: stats.newLeads },
+          { label: "Meetings Booked", value: stats.meetingsThisWeek },
+          { label: "Callbacks", value: stats.callbacksDue },
         ]}
       />
     </div>
