@@ -71,16 +71,89 @@ Environment Variables), then trigger a redeploy yourself once they confirm.
 
 ## Accounts
 
-Exactly 3 accounts exist, on the `lumelush.com` domain, all password
-`lumelush@123`:
-- `admin@lumelush.com`
-- `caller@lumelush.com`
-- `sarah@lumelush.com` (consultant)
+Exactly 3 accounts exist, on the `lumelush.com` domain:
 
-There used to be more (from an old seed script default of 3 callers + 2
-consultants + 2 admins) — they were deliberately deleted down to one of each
-role. `scripts/seed.ts` has been updated to match this reduced team; re-running
-it (`npm run seed`) will not recreate the old extra accounts.
+| Role | Email | Password | Display name |
+|---|---|---|---|
+| admin | `mahak@lumelush.com` | `lumelush@123` | Mahak Khandelwal |
+| caller | `izhan@lumelush.com` | `Izhan@lls5` | Izhan |
+| consultant | `sarah@lumelush.com` | `lumelush@123` | Sarah |
+
+These are **not** the emails baked into `scripts/seed.ts` (which still has
+older placeholder addresses like `admin@lumelush.com`/`caller@lumelush.com`)
+— the live accounts were renamed after seeding via Supabase Auth Admin
+(`updateUserById`), not by re-seeding. Don't trust the seed script's emails as
+current; this table is the source of truth. The **role** "caller" is called
+**"Outreach"** everywhere in the UI (display-only rename — the DB role value,
+`/caller` URL, and internal code/column names are all still literally
+`caller`, unchanged).
+
+Admin can invite new accounts *and* permanently delete them (not just
+deactivate) from Admin → Users.
+
+There used to be more accounts (from an old seed script default of 3 callers
++ 2 consultants + 2 admins) — deliberately deleted down to one of each role.
+
+## Consultant availability — redesigned, and a default behavior flip
+
+The Availability page (`src/app/consultant/availability/`) was rebuilt from a
+dense hour-by-hour grid into one row per day with draggable slot bars (grab
+either edge to resize, "+ Add slot" to add another, "Not available" to clear
+a day). Booked meetings render with the brand gradient, always on top.
+Today/tomorrow show their real hours (no more "locked" striped overlay) but
+only get a "Request a change" button instead of edit controls, since those
+two days genuinely can't be edited directly (see `LOCK_WINDOW_HOURS` in
+`src/lib/policy.ts`).
+
+**Important:** `DEFAULT_AVAILABLE_WHEN_UNSET` in `src/lib/scheduling.ts` was
+flipped from `true` to `false`. A day with **zero explicit
+`availability_windows` rows now means "not available"**, not "open all day"
+like before. This propagates everywhere availability is computed (caller's
+booking screen, consultant's own open-slots count, follow-up booking) via
+the single `windowsWithDefaults()` function. Practical implication: if a
+consultant never sets their hours (or a new consultant is added), **nothing
+is bookable for them at all** until they do — this is intentional, not a
+bug, but it means a newly onboarded consultant needs to set real hours
+before callers can book them.
+
+## Google Calendar integration — credential history, worth knowing
+
+The Meet-link/calendar-invite feature (`src/lib/googleCalendar.ts`) uses a
+Google Cloud OAuth client (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/
+`GOOGLE_REFRESH_TOKEN` in Vercel env vars). It broke once in production with
+`Google token refresh failed: invalid_client` — root cause was never fully
+confirmed (likely a corrupted paste into Vercel's env var UI, same class of
+bug as the Supabase env var outages below) — and was fixed by generating a
+fresh Client Secret + refresh token via OAuth Playground and retyping
+(not pasting) them into Vercel. Verified working since, including a live
+test booking that confirmed via Google's own Calendar API that both
+attendees were added with `needsAction` status (the trigger for Google's
+invite email).
+
+Two things that made this durable, if it ever needs redoing:
+- The Google Cloud OAuth consent screen's **Publishing status is "In
+  production"** (checked in Google Auth Platform → Audience), not
+  "Testing" — this matters because Testing-mode refresh tokens silently
+  expire after 7 days, which would cause this exact failure to recur on a
+  schedule. Production-mode tokens don't have that expiry. If this ever
+  breaks again, check Publishing status first before assuming the
+  credentials were corrupted again.
+- Meeting titles read `"LumeLush Studio × {business name} — Consultation"`
+  (falls back to contact name if no business name). The "context notes"
+  field callers fill in is intentionally **never** sent to Google Calendar
+  (would leak into the client's invite email) — it's only ever shown on the
+  consultant's own dashboard.
+
+## Supabase free tier pauses on inactivity — confirmed real
+
+Watched it happen directly this session: after ~6 days with zero API/DB
+activity, the Supabase project's status cycled `COMING_UP → RESTORING →
+ACTIVE_HEALTHY` over about 15 seconds when queried again, and the live
+site's login failed with "Failed to fetch" during that window. If the team
+isn't using the CRM daily yet, this will keep happening — either touch the
+project periodically (any `execute_sql` call or loading the live site) or
+consider setting up a scheduled ping if the user wants it automated (they
+were offered this and hadn't confirmed as of last session end).
 
 ## Capacity — both platforms are on free tier, on purpose for now
 
@@ -143,6 +216,25 @@ npm run dev
 Needs `.env.local` (gitignored, already present locally with real Supabase +
 Google Calendar credentials — never commit it, never print its contents into
 chat or into a committed file).
+
+## Tool links live in the database, not code
+
+Admin → Tools sets `agent_url`/`agent_label` on rows in the `tool_resources`
+table (keys: `proposal`, `invoice`, `meeting_analysis`, `caller_playbook`,
+`package_deck`, `playbook`). These are pure data — updating them is a
+Supabase `execute_sql` UPDATE, not a code change, and takes effect
+immediately with no deploy. Currently: `proposal` → `https://proposal.lumelush.com/`
+(the user's separate, independently-deployed proposal-generator app — kept
+deliberately decoupled so if it goes down, the CRM keeps working). `invoice`
+and `meeting_analysis` still point at `https://example.com/...` placeholders
+— not built/connected yet.
+
+## An untracked file sits in the repo, unexplained
+
+`.claude/run-italian.cmd` shows up as untracked in `git status` every
+session. Its purpose was never established (unrelated to this project by
+name) and it hasn't been added to `.gitignore` or removed — just leave it
+alone unless the user explains what it's for.
 
 ## Things that went wrong once — don't repeat them
 
