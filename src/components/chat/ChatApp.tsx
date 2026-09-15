@@ -173,7 +173,7 @@ export function ChatApp({
 
   return (
     <Card className={cn("grid grid-cols-[220px_1fr] overflow-hidden", heightClassName)}>
-      <aside className="flex flex-col overflow-y-auto border-r border-edge">
+      <aside className="flex min-h-0 flex-col overflow-y-auto border-r border-edge">
         <button
           onClick={() => setSelection({ kind: "team" })}
           className={cn(
@@ -232,7 +232,7 @@ export function ChatApp({
         })}
       </aside>
 
-      <div className="flex min-w-0 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-col">
         <header className="border-b border-edge px-5 py-3.5">
           <h2 className="flex items-center gap-1.5 font-display text-base text-ink">
             {selection.kind === "team" ? "Team Chat" : selection.contact.full_name}
