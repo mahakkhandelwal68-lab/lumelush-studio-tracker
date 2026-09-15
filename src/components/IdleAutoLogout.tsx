@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { endOpenSession } from "@/lib/sessionTracking";
 
-const IDLE_LIMIT_MS = 15 * 60 * 1000;
+const IDLE_LIMIT_MS = 7 * 60 * 1000;
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"] as const;
 
 /**
- * Signs the user out after 15 minutes with no mouse/keyboard/scroll
+ * Signs the user out after 7 minutes with no mouse/keyboard/scroll
  * activity, closing their active_sessions row at the same time — that
  * close, not a periodic ping, is what makes "how long were they active"
  * a real, cheap-to-store number (see migrations/0025_active_sessions.sql).
  *
  * Also makes a best-effort close on "pagehide" (tab closed or navigated
  * away from entirely, not just idled) — the idle timer above only ever
- * fires if this component stays mounted long enough to see 15 quiet
+ * fires if this component stays mounted long enough to see 7 quiet
  * minutes, which never happens if the tab is simply closed. Without this,
  * that session would stay "open" until the same person's next login,
  * which retroactively closes it (see sessionTracking.ts) but only with a

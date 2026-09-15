@@ -212,7 +212,7 @@ knowing before adding anything that writes rows frequently:
   just the difference between the two timestamps, so growth is bounded by
   login count, not elapsed time. This was explicitly requested and scoped
   by the user after being shown the growth history above, specifically to
-  avoid repeating it. A 15-minute mouse/keyboard/scroll idle timer
+  avoid repeating it. A 7-minute mouse/keyboard/scroll idle timer
   (`src/components/IdleAutoLogout.tsx`, mounted in all three role layouts)
   auto-signs-out and closes the session, which is also what makes "how
   long were they active" a meaningful number rather than "however long

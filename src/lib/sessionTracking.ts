@@ -7,10 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 // was closed outright rather than idled out or signed out of, so the
 // client-side idle timer never got to fire — we have no record of when
 // activity actually stopped. Capping the assumed end at started_at + this
-// window bounds the error to at most 15 minutes, instead of potentially
+// window bounds the error to at most 7 minutes, instead of potentially
 // counting hours or days as active time if the same person doesn't log
 // back in until much later.
-const IDLE_LIMIT_MS = 15 * 60 * 1000;
+const IDLE_LIMIT_MS = 7 * 60 * 1000;
 
 async function closeDanglingSessions(userId: string) {
   const supabase = createClient();
