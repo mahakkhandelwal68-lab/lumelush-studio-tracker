@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatTime } from "@/lib/datetime";
+import { subscribeToPresence } from "@/lib/presence";
 import type { ChatMessage, UserRole } from "@/lib/supabase/types";
 import { Card, cn } from "@/components/ui";
 
@@ -47,6 +48,15 @@ export function ChatApp({
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dmConversationCache = useRef(new Map<string, string>());
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+
+  // Read-only listener on the shared presence channel every PresenceBeacon
+  // (mounted in each role layout) tracks itself on — this component only
+  // observes, it doesn't track its own presence separately. Goes through a
+  // module-level singleton (see lib/presence.ts) rather than creating its
+  // own channel, since a fresh channel per mount breaks under React Strict
+  // Mode's double-invoked effects in dev.
+  useEffect(() => subscribeToPresence(setOnlineIds), []);
 
   // Resolve (or create) the conversation for the current selection.
   useEffect(() => {
@@ -174,39 +184,60 @@ export function ChatApp({
         <div className="data mt-2 px-4 pb-1 text-[11px] font-medium tracking-widest text-ink-faint uppercase">
           Direct messages
         </div>
-        {contacts.map((contact) => (
-          <button
-            key={contact.id}
-            onClick={() => setSelection({ kind: "dm", contact })}
-            className={cn(
-              "flex items-center gap-2.5 px-4 py-3 text-left text-sm transition",
-              selection.kind === "dm" && selection.contact.id === contact.id
-                ? "bg-overlay text-ink"
-                : "text-ink-dim hover:bg-overlay/60 hover:text-ink"
-            )}
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full border border-edge-strong bg-raised text-xs font-semibold text-ink-dim">
-              {initials(contact.full_name)}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate">{contact.full_name}</span>
-              <span className="data block text-[11px] text-ink-faint">
-                {ROLE_LABEL[contact.role]}
+        {contacts.map((contact) => {
+          const online = onlineIds.has(contact.id);
+          return (
+            <button
+              key={contact.id}
+              onClick={() => setSelection({ kind: "dm", contact })}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-3 text-left text-sm transition",
+                selection.kind === "dm" && selection.contact.id === contact.id
+                  ? "bg-overlay text-ink"
+                  : "text-ink-dim hover:bg-overlay/60 hover:text-ink"
+              )}
+            >
+              <span className="relative shrink-0">
+                <span className="grid size-8 place-items-center rounded-full border border-edge-strong bg-raised text-xs font-semibold text-ink-dim">
+                  {initials(contact.full_name)}
+                </span>
+                {online && (
+                  <span
+                    className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-raised bg-status-booked"
+                    title="Online"
+                  />
+                )}
               </span>
-            </span>
-          </button>
-        ))}
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate">{contact.full_name}</span>
+                  {online && (
+                    <span className="size-1.5 shrink-0 rounded-full bg-status-booked" />
+                  )}
+                </span>
+                <span className="data block text-[11px] text-ink-faint">
+                  {ROLE_LABEL[contact.role]}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </aside>
 
       <div className="flex min-w-0 flex-col">
         <header className="border-b border-edge px-5 py-3.5">
-          <h2 className="font-display text-base text-ink">
+          <h2 className="flex items-center gap-1.5 font-display text-base text-ink">
             {selection.kind === "team" ? "Team Chat" : selection.contact.full_name}
+            {selection.kind === "dm" && onlineIds.has(selection.contact.id) && (
+              <span className="size-1.5 rounded-full bg-status-booked" title="Online" />
+            )}
           </h2>
           <p className="text-xs text-ink-faint">
             {selection.kind === "team"
               ? "Everyone on the team"
-              : ROLE_LABEL[selection.contact.role]}
+              : onlineIds.has(selection.contact.id)
+                ? "Online"
+                : ROLE_LABEL[selection.contact.role]}
           </p>
         </header>
 
