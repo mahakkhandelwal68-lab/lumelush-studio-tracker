@@ -66,6 +66,17 @@ export function ChatApp({
   // Mode's double-invoked effects in dev.
   useEffect(() => subscribeToPresence(setOnlineIds), []);
 
+  // A few accounts show online on a fixed daily schedule (see
+  // lib/alwaysOnline.ts) rather than real presence — that's a pure
+  // function of the current time, so without this tick the dot would only
+  // flip at the next unrelated re-render (a new message, a presence
+  // change) instead of exactly when a window starts or ends.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Resolve (or create) the conversation for the current selection.
   useEffect(() => {
     let cancelled = false;
