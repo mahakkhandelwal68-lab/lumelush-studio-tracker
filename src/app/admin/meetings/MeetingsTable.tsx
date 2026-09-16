@@ -23,9 +23,15 @@ interface MeetingRow {
   locationType: "google_meet" | "phone";
   locationDetail: string | null;
   result: MeetingResult;
+  callerId: string;
   calledBy: string;
   consultant: string;
   lead: LeadInfo | null;
+}
+
+interface Sdr {
+  id: string;
+  full_name: string;
 }
 
 const RESULT_LABEL: Record<MeetingResult, string> = {
@@ -53,14 +59,26 @@ function websiteHref(url: string) {
   return url.startsWith("http") ? url : `https://${url}`;
 }
 
-export function MeetingsTable({ rows }: { rows: MeetingRow[] }) {
+export function MeetingsTable({ rows, sdrs }: { rows: MeetingRow[]; sdrs: Sdr[] }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [activeSdr, setActiveSdr] = useState<string>("all");
+
+  const bySdr = useMemo(() => {
+    if (activeSdr === "all") return rows;
+    return rows.filter((r) => r.callerId === activeSdr);
+  }, [rows, activeSdr]);
+
+  const countBySdr = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) counts.set(r.callerId, (counts.get(r.callerId) ?? 0) + 1);
+    return counts;
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => {
+    if (!q) return bySdr;
+    return bySdr.filter((r) => {
       const l = r.lead;
       return (
         (l?.name ?? "").toLowerCase().includes(q) ||
@@ -73,7 +91,12 @@ export function MeetingsTable({ rows }: { rows: MeetingRow[] }) {
         r.consultant.toLowerCase().includes(q)
       );
     });
-  }, [rows, query]);
+  }, [bySdr, query]);
+
+  function switchSdr(id: string) {
+    setActiveSdr(id);
+    setPage(1);
+  }
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -81,6 +104,32 @@ export function MeetingsTable({ rows }: { rows: MeetingRow[] }) {
 
   return (
     <Card className="overflow-hidden">
+      <div className="flex gap-1 overflow-x-auto border-b border-edge px-5 pt-4">
+        <button
+          onClick={() => switchSdr("all")}
+          className={`data shrink-0 rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
+            activeSdr === "all"
+              ? "border-x border-t border-edge bg-raised text-ink"
+              : "text-ink-faint hover:text-ink-dim"
+          }`}
+        >
+          All ({rows.length})
+        </button>
+        {sdrs.map((sdr) => (
+          <button
+            key={sdr.id}
+            onClick={() => switchSdr(sdr.id)}
+            className={`data shrink-0 rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
+              activeSdr === sdr.id
+                ? "border-x border-t border-edge bg-raised text-ink"
+                : "text-ink-faint hover:text-ink-dim"
+            }`}
+          >
+            {sdr.full_name} ({countBySdr.get(sdr.id) ?? 0})
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-5 py-4">
         <p className="data text-xs text-ink-faint">
           {filtered.length} meeting{filtered.length === 1 ? "" : "s"}

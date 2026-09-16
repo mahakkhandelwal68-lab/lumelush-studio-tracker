@@ -11,10 +11,13 @@ export default async function AdminMeetingsPage() {
         "id, created_at, scheduled_start, location_type, location_detail, result, caller_id, consultant_id, leads(name, business_name, phone, alt_phone, email, location, website, ref)"
       )
       .order("scheduled_start", { ascending: false }),
-    supabase.from("profiles").select("id, full_name"),
+    supabase.from("profiles").select("id, full_name, role").order("full_name"),
   ]);
 
   const nameById = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const sdrs = (profiles ?? [])
+    .filter((p) => p.role === "caller")
+    .map((p) => ({ id: p.id, full_name: p.full_name }));
 
   const rows = (meetings ?? []).map((m) => ({
     id: m.id,
@@ -23,6 +26,7 @@ export default async function AdminMeetingsPage() {
     locationType: m.location_type,
     locationDetail: m.location_detail,
     result: m.result,
+    callerId: m.caller_id,
     calledBy: nameById[m.caller_id] ?? "—",
     consultant: nameById[m.consultant_id] ?? "—",
     lead: m.leads,
@@ -37,7 +41,7 @@ export default async function AdminMeetingsPage() {
           and when.
         </p>
       </div>
-      <MeetingsTable rows={rows} />
+      <MeetingsTable rows={rows} sdrs={sdrs} />
     </div>
   );
 }
