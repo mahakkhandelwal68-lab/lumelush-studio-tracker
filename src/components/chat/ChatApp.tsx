@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatTime } from "@/lib/datetime";
-import { subscribeToPresence } from "@/lib/presence";
+import { isOnline, subscribeToPresence } from "@/lib/presence";
 import type { ChatMessage, UserRole } from "@/lib/supabase/types";
 import { Card, cn } from "@/components/ui";
 
@@ -193,7 +193,7 @@ export function ChatApp({
           Direct messages
         </div>
         {contacts.map((contact) => {
-          const online = onlineIds.has(contact.id);
+          const online = isOnline(contact.id, onlineIds);
           return (
             <button
               key={contact.id}
@@ -241,14 +241,14 @@ export function ChatApp({
         <header className="border-b border-edge px-5 py-3.5">
           <h2 className="flex items-center gap-1.5 font-display text-base text-ink">
             {selection.kind === "team" ? "Team Chat" : selection.contact.full_name}
-            {selection.kind === "dm" && onlineIds.has(selection.contact.id) && (
+            {selection.kind === "dm" && isOnline(selection.contact.id, onlineIds) && (
               <span className="size-1.5 rounded-full bg-status-booked" title="Online" />
             )}
           </h2>
           <p className="text-xs text-ink-faint">
             {selection.kind === "team"
               ? "Everyone on the team"
-              : onlineIds.has(selection.contact.id)
+              : isOnline(selection.contact.id, onlineIds)
                 ? "Online"
                 : ROLE_LABEL[selection.contact.role]}
           </p>

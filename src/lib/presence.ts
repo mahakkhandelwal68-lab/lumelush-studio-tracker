@@ -1,8 +1,14 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { isAlwaysOnline } from "@/lib/alwaysOnline";
 
 const PRESENCE_CHANNEL = "presence-online";
+
+/** True if a user should show as online — either really present, or pinned. */
+export function isOnline(userId: string, liveOnlineIds: Set<string>) {
+  return liveOnlineIds.has(userId) || isAlwaysOnline(userId);
+}
 
 type Listener = (onlineIds: Set<string>) => void;
 type PresenceChannel = ReturnType<ReturnType<typeof createClient>["channel"]>;

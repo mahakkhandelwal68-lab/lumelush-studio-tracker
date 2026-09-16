@@ -1,5 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { formatDuration } from "@/lib/activeTime";
+import { isAlwaysOnline } from "@/lib/alwaysOnline";
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Admin",
@@ -52,7 +53,7 @@ export default async function AdminActivityPage() {
     const userSessions = sessionsByUser.get(p.id) ?? [];
     return {
       ...p,
-      onlineNow: userSessions.some((s) => s.ended_at === null),
+      onlineNow: userSessions.some((s) => s.ended_at === null) || isAlwaysOnline(p.id),
       activeToday: sumMs(userSessions, startOfToday.getTime()),
       activeThisWeek: sumMs(userSessions, weekAgo.getTime()),
     };
