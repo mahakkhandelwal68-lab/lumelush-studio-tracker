@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
-import { NotificationsCard, ChangePasswordButton } from "@/components/sdr/SettingsClient";
+import { NotificationsCard } from "@/components/sdr/SettingsClient";
 
 function SectionCard({
   icon,
@@ -119,7 +119,6 @@ export default async function CallerSettingsPage() {
 
         <SectionCard icon={<ShieldGlyph />} title="Account" subtitle="Manage your account security.">
           <div className="space-y-2.5">
-            <ChangePasswordButton />
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

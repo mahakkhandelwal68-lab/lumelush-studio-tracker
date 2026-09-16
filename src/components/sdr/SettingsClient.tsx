@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ChangePasswordModal } from "@/components/sdr/ChangePasswordModal";
 
 const NOTIFICATION_DEFAULTS = [
   { key: "new_leads", label: "New leads assigned", hint: "When new leads are added to your list" },
@@ -37,22 +36,5 @@ export function NotificationsCard() {
         </label>
       ))}
     </div>
-  );
-}
-
-export function ChangePasswordButton() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-sm text-ink transition hover:bg-hover"
-        style={{ borderColor: "var(--border-subtle)" }}
-      >
-        Change Password
-        <span className="text-ink-faint">›</span>
-      </button>
-      {open && <ChangePasswordModal onClose={() => setOpen(false)} />}
-    </>
   );
 }
