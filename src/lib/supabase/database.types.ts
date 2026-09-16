@@ -302,6 +302,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          alt_phone: string | null
           assigned_caller_id: string | null
           business_name: string | null
           created_at: string
@@ -319,6 +320,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          alt_phone?: string | null
           assigned_caller_id?: string | null
           business_name?: string | null
           created_at?: string
@@ -336,6 +338,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          alt_phone?: string | null
           assigned_caller_id?: string | null
           business_name?: string | null
           created_at?: string

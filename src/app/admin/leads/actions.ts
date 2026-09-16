@@ -7,6 +7,7 @@ export async function createLead(input: {
   name: string;
   businessName: string;
   phone: string;
+  altPhone: string;
   email: string;
   location: string;
   website: string;
@@ -18,6 +19,7 @@ export async function createLead(input: {
     name: input.name,
     business_name: input.businessName || null,
     phone: input.phone || null,
+    alt_phone: input.altPhone || null,
     email: input.email || null,
     location: input.location || null,
     website: input.website || null,
@@ -36,6 +38,21 @@ export async function assignLead(leadId: string, callerId: string) {
     .from("leads")
     .update({ assigned_caller_id: callerId || null })
     .eq("id", leadId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/leads");
+}
+
+/** Assigns a batch of leads (by id) to one SDR in a single update. */
+export async function assignLeadsBulk(leadIds: string[], callerId: string) {
+  const { supabase } = await requireProfile("admin");
+  if (!callerId) throw new Error("Choose an SDR to assign to");
+  if (leadIds.length === 0) return;
+
+  const { error } = await supabase
+    .from("leads")
+    .update({ assigned_caller_id: callerId })
+    .in("id", leadIds);
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/leads");

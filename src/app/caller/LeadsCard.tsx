@@ -15,6 +15,7 @@ export interface Lead {
   name: string;
   business_name: string | null;
   phone: string | null;
+  alt_phone: string | null;
   email: string | null;
   location: string | null;
   website: string | null;
@@ -157,6 +158,7 @@ export function LeadsCard({
           l.name.toLowerCase().includes(q) ||
           (l.business_name ?? "").toLowerCase().includes(q) ||
           (l.phone ?? "").toLowerCase().includes(q) ||
+          (l.alt_phone ?? "").toLowerCase().includes(q) ||
           (l.email ?? "").toLowerCase().includes(q) ||
           (l.location ?? "").toLowerCase().includes(q)
       );
@@ -356,6 +358,9 @@ function LeadRow({
         <p className="data-num text-sm text-ink-dim">
           {lead.phone ?? <span className="text-ink-faint">—</span>}
         </p>
+        {lead.alt_phone && (
+          <p className="data-num mt-0.5 text-xs text-ink-faint">{lead.alt_phone}</p>
+        )}
         {lead.email && (
           <p className="data mt-0.5 truncate text-xs text-ink-faint">
             {lead.email}
