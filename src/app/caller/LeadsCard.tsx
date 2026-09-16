@@ -260,7 +260,11 @@ export function LeadsCard({
                   <th className={COL_HEAD}>Location</th>
                   <th className={COL_HEAD}>Website</th>
                   <th className={COL_HEAD}>Status</th>
-                  <th className={`${COL_HEAD} text-right`}>Actions</th>
+                  <th
+                    className={`${COL_HEAD} sticky right-0 border-l border-edge bg-raised text-right`}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -466,7 +470,7 @@ function LeadRow({
         )}
       </td>
 
-      <td className="px-3 py-3">
+      <td className="sticky right-0 border-l border-edge bg-raised px-3 py-3">
         <div className="flex justify-end gap-2">
           {lead.status === "not_interested" ? (
             <Button
