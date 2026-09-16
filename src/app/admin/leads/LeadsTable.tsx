@@ -63,6 +63,8 @@ function websiteLabel(url: string) {
   return url.replace(/^https?:\/\//, "");
 }
 
+const PAGE_SIZE = 25;
+
 export function LeadsTable({
   leads,
   callers,
@@ -76,6 +78,7 @@ export function LeadsTable({
   const [tab, setTab] = useState<"new" | "assigned">("new");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCallerId, setBulkCallerId] = useState("");
+  const [page, setPage] = useState(1);
 
   function set<K extends keyof typeof EMPTY_FORM>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -100,7 +103,14 @@ export function LeadsTable({
 
   const newLeads = useMemo(() => leads.filter((l) => !l.assigned_caller_id), [leads]);
   const assignedLeads = useMemo(() => leads.filter((l) => l.assigned_caller_id), [leads]);
-  const visibleLeads = tab === "new" ? newLeads : assignedLeads;
+  const tabLeads = tab === "new" ? newLeads : assignedLeads;
+
+  const pageCount = Math.max(1, Math.ceil(tabLeads.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const visibleLeads = tabLeads.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   const allVisibleSelected =
     visibleLeads.length > 0 && visibleLeads.every((l) => selectedIds.has(l.id));
@@ -134,12 +144,14 @@ export function LeadsTable({
       await assignLeadsBulk(ids, bulkCallerId);
       setSelectedIds(new Set());
       setBulkCallerId("");
+      setPage(1);
     });
   }
 
   function switchTab(next: "new" | "assigned") {
     setTab(next);
     setSelectedIds(new Set());
+    setPage(1);
   }
 
   const selectedCount = [...selectedIds].filter((id) =>
@@ -401,6 +413,55 @@ export function LeadsTable({
             </table>
           )}
         </div>
+
+        {tabLeads.length > 0 && (
+          <div className="flex items-center justify-between border-t border-edge px-5 py-3">
+            <span className="data text-xs text-ink-faint">
+              {(safePage - 1) * PAGE_SIZE + 1}–
+              {Math.min(safePage * PAGE_SIZE, tabLeads.length)} of {tabLeads.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+              >
+                Prev
+              </Button>
+              {Array.from({ length: pageCount }, (_, i) => i + 1)
+                .filter(
+                  (n) =>
+                    n === 1 ||
+                    n === pageCount ||
+                    Math.abs(n - safePage) <= 2
+                )
+                .map((n, i, arr) => (
+                  <span key={n} className="flex items-center gap-1">
+                    {i > 0 && arr[i - 1] !== n - 1 && (
+                      <span className="data px-1 text-xs text-ink-faint">…</span>
+                    )}
+                    <button
+                      onClick={() => setPage(n)}
+                      className={`data min-w-[1.75rem] rounded-md px-2 py-1 text-xs font-medium transition ${
+                        n === safePage
+                          ? "bg-brand-teal text-[#04121f]"
+                          : "text-ink-dim hover:bg-overlay"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  </span>
+                ))}
+              <Button
+                size="sm"
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={safePage === pageCount}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
