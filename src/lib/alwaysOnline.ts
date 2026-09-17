@@ -1,18 +1,13 @@
 // Business request: a fixed set of accounts should show the green online
 // indicator (chat presence dot, Admin -> Activity's Online/Offline) on a
-// schedule, independent of whether they're actually connected — not real
-// presence tracking, and not automation (no cron/job runs anything): this
-// is a pure function of the current time, re-evaluated on every render, so
-// the dot naturally turns on/off as the clock crosses each window with no
-// standing process required.
+// daily schedule, independent of whether they're actually connected — not
+// real presence tracking, and not automation (no cron/job runs anything):
+// this is a pure function of the current time, re-evaluated on every
+// render, so the dot naturally turns on/off as the clock crosses each
+// window with no standing process required.
 //
 // Keyed by profile id since chat contact rows don't carry email; update if
 // these accounts are ever deleted and recreated (id changes).
-const ALWAYS_ONLINE_IDS = new Set([
-  "491df9ad-e17b-4f15-81c4-457d8d8231fc", // udit@lumelush.com
-  "c0257a58-c966-47d7-8833-f10722abc19e", // purva@lumelush.com
-  "0ece7734-2591-4bfe-9c49-1957f43ff2bd", // umang@lumelush.com
-]);
 
 /** [startMinute, endMinute) of day, in IST, e.g. [660, 780] = 11:00-13:00. */
 type Window = [number, number];
@@ -22,6 +17,21 @@ function hm(hour: number, minute: number) {
 }
 
 const SCHEDULED_ONLINE_WINDOWS: Record<string, Window[]> = {
+  // udit@lumelush.com — 11:30am-2:30pm, 3:30pm-6:30pm
+  "491df9ad-e17b-4f15-81c4-457d8d8231fc": [
+    [hm(11, 30), hm(14, 30)],
+    [hm(15, 30), hm(18, 30)],
+  ],
+  // purva@lumelush.com — 11:30am-2:30pm, 3:30pm-6:30pm
+  "c0257a58-c966-47d7-8833-f10722abc19e": [
+    [hm(11, 30), hm(14, 30)],
+    [hm(15, 30), hm(18, 30)],
+  ],
+  // umang@lumelush.com — 11:30am-2:30pm, 3:30pm-6:30pm
+  "0ece7734-2591-4bfe-9c49-1957f43ff2bd": [
+    [hm(11, 30), hm(14, 30)],
+    [hm(15, 30), hm(18, 30)],
+  ],
   // sumaya@lumelush.com — 11:55-13:00, 14:00-15:00, 17:00-18:30
   "0a3dfe7d-1651-42ca-881a-3153e1d3d167": [
     [hm(11, 55), hm(13, 0)],
@@ -57,8 +67,6 @@ function istMinuteOfDay(date: Date) {
 }
 
 export function isAlwaysOnline(userId: string) {
-  if (ALWAYS_ONLINE_IDS.has(userId)) return true;
-
   const windows = SCHEDULED_ONLINE_WINDOWS[userId];
   if (!windows) return false;
 
