@@ -73,22 +73,30 @@ Environment Variables), then trigger a redeploy yourself once they confirm.
 
 10 accounts exist, on the `lumelush.com` domain:
 
-| Role | Email | Password | Display name |
-|---|---|---|---|
-| admin | `mahak@lumelush.com` | `Lumelush@124` | Mahak K |
-| admin | `ankit@lumelush.com` | `Lumelush@124` | Ankit P |
-| consultant | `sarah@lumelush.com` | `Lumelush@124` | Sarah |
-| consultant | `ruhi@lumelush.com` | `Lumelush@124` | Ruhi |
-| consultant | `akhil@lumelush.com` | `Lumelush@124` | Akhil |
-| consultant | `sumaya@lumelush.com` | `Lumelush@124` | Sumaya |
-| caller | `udit@lumelush.com` | `Lumelush@124` | Udit |
-| caller | `purva@lumelush.com` | `Lumelush@124` | Purva |
-| caller | `karan@lumelush.com` | `Karanm@1509` | Karan |
-| caller | `umang@lumelush.com` | `Lumelush@124` | Umang |
+| Role | Email | Display name |
+|---|---|---|
+| admin | `mahak@lumelush.com` | Mahak K |
+| admin | `ankit@lumelush.com` | Ankit P |
+| consultant | `sarah@lumelush.com` | Sarah |
+| consultant | `ruhi@lumelush.com` | Ruhi |
+| consultant | `akhil@lumelush.com` | Akhil |
+| consultant | `sumaya@lumelush.com` | Sumaya |
+| caller | `udit@lumelush.com` | Udit |
+| caller | `purva@lumelush.com` | Purva |
+| caller | `karan@lumelush.com` | Karan |
+| caller | `umang@lumelush.com` | Umang |
 
-Note Karan's password is the one deliberate exception to the shared
-`Lumelush@124` convention — every other account, including Sarah's (reset
-this session from the older `lumelush@123`), uses it. These are **not** the
+**Passwords are deliberately not written here** — this file is committed to
+the public GitHub repo, and every account except Karan's was moved off a
+single shared password to a unique one per person specifically to reduce
+blast radius if any one password leaked; writing them back into a public
+file would undo that. The user has the current passwords; ask them if a
+session needs to log in as someone, rather than assuming a shared or
+previously-documented password still works. If a password ever needs
+resetting, use the Supabase Auth Admin API
+(`supabase.auth.admin.updateUserById`) via a short-lived local script, the
+same way the initial unique-password rollout was done — never commit
+credentials to a file in this repo. These are **not** the
 emails baked into `scripts/seed.ts` (which still has older placeholder
 addresses like `admin@lumelush.com`/`caller@lumelush.com`) — accounts were
 created/renamed directly via the Supabase Auth Admin API
