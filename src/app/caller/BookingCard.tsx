@@ -10,6 +10,7 @@ interface Lead {
   ref: string;
   name: string;
   email: string | null;
+  phone: string | null;
   business_name: string | null;
   status: LeadStatus;
 }

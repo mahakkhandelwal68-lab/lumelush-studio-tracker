@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { bookMeeting } from "@/app/caller/actions";
+import { bookMeeting, type BookMeetingResult } from "@/app/caller/actions";
 import {
   DISPLAY_TIMEZONE,
   formatDateTime,
@@ -18,6 +18,7 @@ import {
   windowsWithDefaults,
   type Interval,
 } from "@/lib/scheduling";
+import { buildMeetingConfirmationMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import { Modal } from "@/components/Modal";
 
@@ -38,6 +39,7 @@ export function BookMeetingModal({
     name: string;
     business_name: string | null;
     email: string | null;
+    phone: string | null;
   };
   consultants: Consultant[];
   onClose: () => void;
@@ -58,6 +60,8 @@ export function BookMeetingModal({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [booked, setBooked] = useState<BookMeetingResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const days = useMemo(
     () =>
@@ -183,7 +187,7 @@ export function BookMeetingModal({
 
     startTransition(async () => {
       try {
-        await bookMeeting({
+        const result = await bookMeeting({
           leadId: lead.id,
           leadName: lead.name,
           businessName: lead.business_name,
@@ -195,13 +199,76 @@ export function BookMeetingModal({
           locationDetail,
           guestEmail,
         });
-        onClose();
+        setBooked(result);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Couldn't book the meeting"
         );
       }
     });
+  }
+
+  const shareMessage = booked
+    ? buildMeetingConfirmationMessage({
+        leadName: lead.name,
+        businessName: lead.business_name,
+        consultantName: booked.consultantName,
+        scheduledStart: booked.scheduledStart,
+        locationType: booked.locationType,
+        locationDetail: booked.locationDetail,
+      })
+    : "";
+
+  async function copyMessage() {
+    await navigator.clipboard.writeText(shareMessage);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (booked) {
+    return (
+      <Modal
+        title="Meeting booked"
+        subtitle={`${lead.ref} · ${lead.name}`}
+        onClose={onClose}
+        footer={
+          <Button type="button" variant="primary" onClick={onClose}>
+            Done
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ink-dim">
+            Confirmed for {formatDateTime(booked.scheduledStart)} with{" "}
+            {booked.consultantName}. Share the details with {lead.name} on WhatsApp:
+          </p>
+
+          <Textarea readOnly rows={8} value={shareMessage} className="text-sm" />
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={copyMessage}>
+              {copied ? "Copied!" : "Copy message"}
+            </Button>
+            <a
+              href={buildWhatsAppUrl(lead.phone, shareMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button type="button" variant="primary">
+                Share on WhatsApp
+              </Button>
+            </a>
+          </div>
+
+          {!lead.phone && (
+            <p className="text-xs text-ink-faint">
+              No phone number on file for this lead — WhatsApp will open without a
+              chat pre-selected, so paste the number in yourself.
+            </p>
+          )}
+        </div>
+      </Modal>
+    );
   }
 
   return (

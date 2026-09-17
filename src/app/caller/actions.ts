@@ -58,6 +58,15 @@ const FORCED_CONSULTANT_BY_CALLER_EMAIL: Record<string, string> = {
   "karan@lumelush.com": "sarah@lumelush.com",
 };
 
+export interface BookMeetingResult {
+  consultantName: string;
+  scheduledStart: string;
+  scheduledEnd: string;
+  locationType: "google_meet" | "phone";
+  /** The Meet link (for google_meet) or the number to call (for phone). */
+  locationDetail: string | null;
+}
+
 /**
  * The caller never picks a consultant — the system assigns whoever's free at
  * the chosen time with the lightest current load (see book_meeting_auto),
@@ -76,7 +85,7 @@ export async function bookMeeting(input: {
   locationDetail: string;
   /** Lead's email to invite — only used when locationType is "google_meet". */
   guestEmail: string;
-}) {
+}): Promise<BookMeetingResult> {
   const { profile } = await requireProfile("caller");
   const supabase = await createClient();
 
@@ -128,15 +137,16 @@ export async function bookMeeting(input: {
     meeting = data;
   }
 
+  const { data: consultant } = await supabase
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", meeting.consultant_id)
+    .single();
+
   // Best-effort: generate the real Meet link and invite both parties. If this
   // fails or Google isn't configured yet, the booking still stands.
-  if (input.locationType === "google_meet" && meeting) {
-    const { data: consultant } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("id", meeting.consultant_id)
-      .single();
-
+  let finalLocationDetail = meeting.location_detail;
+  if (input.locationType === "google_meet") {
     const attendees = [input.guestEmail, consultant?.email].filter(
       (e): e is string => Boolean(e)
     );
@@ -152,6 +162,7 @@ export async function bookMeeting(input: {
     });
 
     if (created) {
+      finalLocationDetail = created.meetLink;
       await supabase
         .from("meetings")
         .update({ location_detail: created.meetLink })
@@ -160,6 +171,14 @@ export async function bookMeeting(input: {
   }
 
   revalidatePath("/caller");
+
+  return {
+    consultantName: consultant?.full_name ?? "your consultant",
+    scheduledStart: meeting.scheduled_start,
+    scheduledEnd: meeting.scheduled_end,
+    locationType: input.locationType,
+    locationDetail: finalLocationDetail,
+  };
 }
 
 /** Move a dead lead back into the working queue. */
