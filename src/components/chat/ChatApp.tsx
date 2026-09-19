@@ -204,7 +204,9 @@ export function ChatApp({
           Direct messages
         </div>
         {contacts.map((contact) => {
-          const online = isOnline(contact.id, onlineIds);
+          // Admin accounts never show an online/offline status.
+          const showStatus = contact.role !== "admin";
+          const online = showStatus && isOnline(contact.id, onlineIds);
           return (
             <button
               key={contact.id}
@@ -220,23 +222,27 @@ export function ChatApp({
                 <span className="grid size-8 place-items-center rounded-full border border-edge-strong bg-raised text-xs font-semibold text-ink-dim">
                   {initials(contact.full_name)}
                 </span>
-                <span
-                  className={cn(
-                    "absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-raised",
-                    online ? "bg-status-booked" : "bg-ink-faint/50"
-                  )}
-                  title={online ? "Online" : "Offline"}
-                />
-              </span>
-              <span className="min-w-0">
-                <span className="flex items-center gap-1.5">
+                {showStatus && (
                   <span
                     className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      online ? "bg-status-booked" : "border border-ink-faint/50"
+                      "absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-raised",
+                      online ? "bg-status-booked" : "bg-ink-faint/50"
                     )}
                     title={online ? "Online" : "Offline"}
                   />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5">
+                  {showStatus && (
+                    <span
+                      className={cn(
+                        "size-2 shrink-0 rounded-full",
+                        online ? "bg-status-booked" : "border border-ink-faint/50"
+                      )}
+                      title={online ? "Online" : "Offline"}
+                    />
+                  )}
                   <span className="truncate">{contact.full_name}</span>
                 </span>
                 <span className="data block text-[11px] text-ink-faint">
@@ -252,14 +258,16 @@ export function ChatApp({
         <header className="border-b border-edge px-5 py-3.5">
           <h2 className="flex items-center gap-1.5 font-display text-base text-ink">
             {selection.kind === "team" ? "Team Chat" : selection.contact.full_name}
-            {selection.kind === "dm" && isOnline(selection.contact.id, onlineIds) && (
-              <span className="size-1.5 rounded-full bg-status-booked" title="Online" />
-            )}
+            {selection.kind === "dm" &&
+              selection.contact.role !== "admin" &&
+              isOnline(selection.contact.id, onlineIds) && (
+                <span className="size-1.5 rounded-full bg-status-booked" title="Online" />
+              )}
           </h2>
           <p className="text-xs text-ink-faint">
             {selection.kind === "team"
               ? "Everyone on the team"
-              : isOnline(selection.contact.id, onlineIds)
+              : selection.contact.role !== "admin" && isOnline(selection.contact.id, onlineIds)
                 ? "Online"
                 : ROLE_LABEL[selection.contact.role]}
           </p>

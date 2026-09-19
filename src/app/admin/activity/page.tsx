@@ -88,19 +88,30 @@ export default async function AdminActivityPage() {
                   <p className="data text-xs text-ink-faint">{r.email}</p>
                 </td>
                 <td className="data px-4 py-3 text-ink-dim">{ROLE_LABEL[r.role] ?? r.role}</td>
-                <td className="px-4 py-3">
-                  <span className="data inline-flex items-center gap-1.5 text-xs font-medium">
-                    <span
-                      className="size-2 rounded-full"
-                      style={{ background: r.onlineNow ? "var(--status-booked)" : "var(--border-strong)" }}
-                    />
-                    <span className={r.onlineNow ? "text-ink" : "text-ink-faint"}>
-                      {r.onlineNow ? "Online" : "Offline"}
-                    </span>
-                  </span>
-                </td>
-                <td className="data-num px-4 py-3 text-ink-dim">{formatDuration(r.activeToday)}</td>
-                <td className="data-num px-4 py-3 text-ink-dim">{formatDuration(r.activeThisWeek)}</td>
+                {r.role === "admin" ? (
+                  // Admin accounts are deliberately not tracked or shown as online/offline.
+                  <>
+                    <td className="data px-4 py-3 text-ink-faint">—</td>
+                    <td className="data-num px-4 py-3 text-ink-faint">—</td>
+                    <td className="data-num px-4 py-3 text-ink-faint">—</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-3">
+                      <span className="data inline-flex items-center gap-1.5 text-xs font-medium">
+                        <span
+                          className="size-2 rounded-full"
+                          style={{ background: r.onlineNow ? "var(--status-booked)" : "var(--border-strong)" }}
+                        />
+                        <span className={r.onlineNow ? "text-ink" : "text-ink-faint"}>
+                          {r.onlineNow ? "Online" : "Offline"}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="data-num px-4 py-3 text-ink-dim">{formatDuration(r.activeToday)}</td>
+                    <td className="data-num px-4 py-3 text-ink-dim">{formatDuration(r.activeThisWeek)}</td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
