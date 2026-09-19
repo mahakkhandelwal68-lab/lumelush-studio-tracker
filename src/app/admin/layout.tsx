@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { BrandMark } from "@/components/BrandMark";
+import { EnableNotifications } from "@/components/EnableNotifications";
+import { NOTIFY_EMAILS } from "@/lib/pushNotify";
 
 const NAV = [
   { href: "/admin", label: "Reporting" },
@@ -29,7 +31,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-edge bg-base/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3.5">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 py-3.5">
           <div className="flex items-center gap-4">
             <BrandMark />
             <span className="hidden h-5 w-px bg-edge-strong sm:block" />
@@ -39,6 +41,9 @@ export default async function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            {NOTIFY_EMAILS.includes(profile.email) && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && (
+              <EnableNotifications publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />
+            )}
             <div className="hidden text-right sm:block">
               <p className="data text-sm leading-tight text-ink">
                 {profile.full_name}

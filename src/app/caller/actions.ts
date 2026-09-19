@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyMeetingBooked } from "@/lib/pushNotify";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { createMeetEvent } from "@/lib/googleCalendar";
@@ -171,6 +173,15 @@ export async function bookMeeting(input: {
   }
 
   revalidatePath("/caller");
+
+  after(() =>
+    notifyMeetingBooked({
+      bookedBy: profile.full_name,
+      leadLabel: input.businessName || input.leadName,
+      consultantName: consultant?.full_name ?? "a consultant",
+      scheduledStart: meeting.scheduled_start,
+    })
+  );
 
   return {
     consultantName: consultant?.full_name ?? "your consultant",

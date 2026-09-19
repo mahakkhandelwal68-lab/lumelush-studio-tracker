@@ -240,6 +240,22 @@ knowing before adding anything that writes rows frequently:
   their own internal use), they plan to upgrade both platforms to paid tiers
   first — this is a known, deliberate future step, not a gap to flag again.
 
+## Phone push notifications for meeting bookings (admin only)
+
+Whenever a meeting is booked (SDR booking or a consultant follow-up), the
+server sends a Web Push to the phone(s) registered by `mahak@lumelush.com`
+(`NOTIFY_EMAILS` in `src/lib/pushNotify.ts`). Devices are stored in
+`push_subscriptions` (migration `0030`); the "Enable notifications" button
+lives in the admin header (`src/components/EnableNotifications.tsx`) and
+only renders for accounts in `NOTIFY_EMAILS`. On iPhone this only works when
+the CRM is opened from its Home Screen icon (needs `src/app/manifest.ts` and
+iOS 16.4+); if the icon was added before the manifest existed it has to be
+removed and re-added. Needs three Vercel env vars: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (a `mailto:` address). Without them the
+button simply doesn't render and bookings are unaffected. The private key is
+never committed; regenerate a pair with `web-push generate-vapid-keys` if it
+is lost (devices then have to re-enable notifications).
+
 ## Deferred: Google Places lead-generation feature
 
 Discussed but **not built yet** — the user wants an Admin → "Extract Leads"

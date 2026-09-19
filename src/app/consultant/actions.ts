@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyMeetingBooked } from "@/lib/pushNotify";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { MeetingResult } from "@/lib/supabase/types";
@@ -285,7 +287,7 @@ export async function bookFollowUp(
   durationMinutes: number,
   contextNotes: string
 ) {
-  await requireProfile("consultant");
+  const { profile } = await requireProfile("consultant");
   const supabase = await createClient();
 
   const { data: created, error } = await supabase.rpc("book_meeting_at", {
@@ -311,6 +313,19 @@ export async function bookFollowUp(
   if (linkError) throw new Error(linkError.message);
 
   revalidatePath("/consultant");
+
+  const [{ data: lead }, { data: consultant }] = await Promise.all([
+    supabase.from("leads").select("name, business_name").eq("id", leadId).single(),
+    supabase.from("profiles").select("full_name").eq("id", consultantId).single(),
+  ]);
+  after(() =>
+    notifyMeetingBooked({
+      bookedBy: `${profile.full_name} (follow-up)`,
+      leadLabel: lead?.business_name || lead?.name || "a lead",
+      consultantName: consultant?.full_name ?? "a consultant",
+      scheduledStart: created.scheduled_start,
+    })
+  );
 }
 
 export async function markProposalSent(meetingId: string) {
