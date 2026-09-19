@@ -42,6 +42,41 @@ export async function startSession(userId: string) {
   await supabase.from("active_sessions").insert({ user_id: userId });
 }
 
+// A session younger than this at mount time is the one login just opened;
+// anything older still open is a leftover from a closed/killed tab.
+const FRESH_SESSION_MS = 60_000;
+
+/**
+ * Makes sure this user has exactly one live session while the app is on
+ * screen: called when a page mounts (a reload closes the old session via
+ * pagehide) and when the app comes back to the foreground after being
+ * backgrounded (which closed it, so time away isn't counted as active).
+ * Leftover stale sessions are capped like at login rather than resumed.
+ */
+export async function ensureOpenSession(userId: string) {
+  const supabase = createClient();
+  const { data: open } = await supabase
+    .from("active_sessions")
+    .select("id, started_at")
+    .eq("user_id", userId)
+    .is("ended_at", null);
+
+  const now = Date.now();
+  let hasFresh = false;
+  for (const session of open ?? []) {
+    const started = new Date(session.started_at).getTime();
+    if (now - started < FRESH_SESSION_MS) {
+      hasFresh = true;
+      continue;
+    }
+    await supabase
+      .from("active_sessions")
+      .update({ ended_at: new Date(Math.min(now, started + IDLE_LIMIT_MS)).toISOString() })
+      .eq("id", session.id);
+  }
+  if (!hasFresh) await supabase.from("active_sessions").insert({ user_id: userId });
+}
+
 /**
  * Closes this user's currently-open session. Used for the two cases where
  * we know activity actually just stopped (manual sign-out, idle timeout) —
