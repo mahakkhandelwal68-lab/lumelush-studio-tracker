@@ -1,6 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { Badge, Card, CardHeader } from "@/components/ui";
-import { formatTime } from "@/lib/datetime";
+import { formatDayDateTime, formatTime } from "@/lib/datetime";
 import type { CallOutcome, MeetingResult } from "@/lib/supabase/types";
 
 const OUTCOME_LABEL: Record<CallOutcome, string> = {
@@ -193,7 +193,7 @@ export default async function AdminReportingPage() {
       <Card className="overflow-hidden">
         <CardHeader
           title="Meetings booked today"
-          subtitle="Which lead, by whom, and for what time."
+          subtitle="Which lead, by whom, and for what date and time."
         />
         <div className="overflow-auto">
           {(meetingsToday ?? []).length === 0 ? (
@@ -237,7 +237,7 @@ export default async function AdminReportingPage() {
                       {nameById.get(m.consultant_id) ?? "—"}
                     </td>
                     <td className="data-num px-4 py-3 text-sm text-ink">
-                      {formatTime(m.scheduled_start)}
+                      {formatDayDateTime(m.scheduled_start)}
                     </td>
                     <td className="data-num px-4 py-3 text-sm text-ink-faint">
                       {formatTime(m.created_at)}
