@@ -47,28 +47,56 @@ export function EnableNotifications({ publicKey }: { publicKey: string }) {
     check().catch(() => setStatus("unsupported"));
   }, []);
 
+  // Labels the failing step so an error on a phone says where it broke.
+  async function step<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      throw new Error(`${name}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  async function subscribeWithKey(reg: ServiceWorkerRegistration, key: string) {
+    try {
+      return await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(key),
+      });
+    } catch (first) {
+      // Some Safari versions only accept the key as a base64url string.
+      try {
+        return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      } catch {
+        throw first;
+      }
+    }
+  }
+
   async function enable() {
     setBusy(true);
     setMessage(null);
     try {
-      const permission = await Notification.requestPermission();
+      const permission = await step("permission", () => Notification.requestPermission());
       if (permission !== "granted") {
         setStatus(permission === "denied" ? "denied" : "off");
         return;
       }
-      const reg = await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        }));
-      await savePushSubscription({
-        endpoint: sub.endpoint,
-        p256dh: b64(sub.getKey("p256dh")),
-        auth: b64(sub.getKey("auth")),
+      const reg = await step("worker", async () => {
+        const r = await navigator.serviceWorker.register("/sw.js");
+        await navigator.serviceWorker.ready;
+        return r;
       });
+      const sub = await step(
+        "subscribe",
+        async () => (await reg.pushManager.getSubscription()) ?? (await subscribeWithKey(reg, publicKey.trim()))
+      );
+      await step("save", () =>
+        savePushSubscription({
+          endpoint: sub.endpoint,
+          p256dh: b64(sub.getKey("p256dh")),
+          auth: b64(sub.getKey("auth")),
+        })
+      );
       setStatus("on");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Couldn't turn on notifications");
