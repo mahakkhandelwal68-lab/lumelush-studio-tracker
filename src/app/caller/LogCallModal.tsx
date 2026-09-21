@@ -186,12 +186,23 @@ export function LogCallModal({
           </Field>
         )}
 
-        <Field label="Notes">
+        <Field
+          label={needsFollowUp ? "Comment for the call back" : "Notes"}
+          hint={
+            needsFollowUp
+              ? "Shown on your Callbacks sheet next to the call-back time, so you remember what they said."
+              : undefined
+          }
+        >
           <Textarea
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="What did they say?"
+            placeholder={
+              needsFollowUp
+                ? "What did they say? e.g. Owner travelling, call after 3 pm, wants pricing first"
+                : "What did they say?"
+            }
           />
         </Field>
 
