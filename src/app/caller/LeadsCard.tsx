@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { LeadStatus } from "@/lib/supabase/types";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, formatDayDateTime } from "@/lib/datetime";
 import { LogCallModal } from "@/app/caller/LogCallModal";
 import { BookMeetingModal } from "@/app/caller/BookMeetingModal";
 import { MeetingLinkCell } from "@/app/caller/MeetingLinkCell";
@@ -115,6 +115,15 @@ function attemptStyle(attempts: number) {
     cls: "border-[#1d4a75] bg-[#0e2942] text-status-new",
     label: `${attempts} call`,
   };
+}
+
+/** "in 3 h", "in 2 d", "1 h overdue" — how far the call-back time is from now. */
+function relativeDue(dueIso: string, nowIso: string) {
+  const diffMin = Math.round((new Date(dueIso).getTime() - new Date(nowIso).getTime()) / 60000);
+  const abs = Math.abs(diffMin);
+  const text =
+    abs < 60 ? `${abs} min` : abs < 60 * 24 ? `${Math.round(abs / 60)} h` : `${Math.round(abs / 1440)} d`;
+  return diffMin >= 0 ? `in ${text}` : `${text} overdue`;
 }
 
 const COL_HEAD =
@@ -336,8 +345,13 @@ function LeadRow({
   const exhausted =
     lead.status === "no_answer" && (history?.attempts ?? 0) >= MAX_ATTEMPTS;
 
+  const isCallback = lead.status === "callback";
+
   return (
-    <tr className="group border-b border-edge align-top transition hover:bg-hover/60">
+    <>
+    <tr
+      className={`group border-edge align-top transition hover:bg-hover/60 ${isCallback ? "" : "border-b"}`}
+    >
       <td className="px-3 py-3">
         <div className="flex items-center gap-2">
           <span className="data-num rounded border border-edge-strong bg-overlay px-1.5 py-0.5 text-[10px] text-ink-faint">
@@ -438,19 +452,12 @@ function LeadRow({
             <span className="data-num">{history.attempts}</span>
             {history.attempts === 1 ? " call" : " calls"} · last{" "}
             {OUTCOME_LABEL[history.lastOutcome] ?? history.lastOutcome}
-            {history.lastNotes && (
+            {history.lastNotes && lead.status !== "callback" && (
               <span className="text-ink-dim"> — “{history.lastNotes}”</span>
             )}
           </p>
         )}
 
-        {lead.status === "callback" && lead.follow_up_at && (
-          <p
-            className={`data mt-1 text-xs ${overdue ? "text-status-callback" : "text-ink-dim"}`}
-          >
-            Call back {formatDateTime(lead.follow_up_at)}
-          </p>
-        )}
 
         {lead.status === "not_interested" && lead.not_interested_reason && (
           <p className="mt-1 text-xs text-ink-faint">
@@ -505,5 +512,45 @@ function LeadRow({
         </div>
       </td>
     </tr>
+
+    {isCallback && (
+      <tr className="border-b border-edge">
+        <td colSpan={7} className="px-3 pb-3">
+          <div
+            className="flex flex-wrap items-start gap-x-8 gap-y-1.5 rounded-lg border px-3.5 py-2.5"
+            style={{
+              borderColor: overdue ? "rgba(229,100,106,0.55)" : "rgba(240,180,41,0.55)",
+              background: overdue ? "rgba(229,100,106,0.12)" : "rgba(240,180,41,0.14)",
+            }}
+          >
+            <div>
+              <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
+                {overdue ? "Call back · overdue" : "Call back"}
+              </p>
+              {lead.follow_up_at ? (
+                <p className="data text-sm font-semibold text-ink">
+                  {formatDayDateTime(lead.follow_up_at)}
+                  <span className="ml-1.5 text-xs font-normal text-ink-dim">
+                    ({relativeDue(lead.follow_up_at, now)})
+                  </span>
+                </p>
+              ) : (
+                <p className="data text-sm text-ink-dim">No time set</p>
+              )}
+            </div>
+
+            <div className="min-w-[12rem] flex-1">
+              <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
+                Comment{history ? ` · logged ${formatDateTime(history.lastAt)}` : ""}
+              </p>
+              <p className="text-sm whitespace-pre-wrap text-ink">
+                {history?.lastNotes ? `“${history.lastNotes}”` : <span className="text-ink-faint">No comment left</span>}
+              </p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
