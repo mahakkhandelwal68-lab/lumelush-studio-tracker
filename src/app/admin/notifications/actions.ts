@@ -34,10 +34,16 @@ export async function removePushSubscription(endpoint: string) {
 
 export async function sendTestNotification() {
   const { profile } = await requireNotifiedAdmin();
-  const delivered = await sendPushToEmails([profile.email], {
-    title: "Test notification",
-    body: "Booking alerts are on for this phone.",
-    url: "/admin/meetings",
-  });
-  return delivered;
+  // Returned rather than thrown: production masks thrown server-action
+  // messages, which left the phone showing an opaque React error.
+  try {
+    const delivered = await sendPushToEmails([profile.email], {
+      title: "Test notification",
+      body: "Booking alerts are on for this phone.",
+      url: "/admin/meetings",
+    });
+    return { delivered, error: null as string | null };
+  } catch (err) {
+    return { delivered: 0, error: err instanceof Error ? err.message : "Send failed" };
+  }
 }

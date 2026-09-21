@@ -13,10 +13,17 @@ export interface PushPayload {
   url: string;
 }
 
+// Values pasted into Vercel's env UI can pick up stray whitespace, quotes or
+// base64 "=" padding, which web-push rejects outright. Keys must be URL-safe
+// base64 without padding, so drop anything that isn't part of that alphabet.
+function cleanKey(value: string | undefined) {
+  return (value ?? "").replace(/[^A-Za-z0-9_-]/g, "");
+}
+
 function configureVapid() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
+  const publicKey = cleanKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+  const privateKey = cleanKey(process.env.VAPID_PRIVATE_KEY);
+  const subject = (process.env.VAPID_SUBJECT ?? "").trim().replace(/^["']|["']$/g, "");
   if (!publicKey || !privateKey || !subject) return false;
   webpush.setVapidDetails(subject, publicKey, privateKey);
   return true;

@@ -124,8 +124,14 @@ export function EnableNotifications({ publicKey }: { publicKey: string }) {
     setBusy(true);
     setMessage(null);
     try {
-      const delivered = await sendTestNotification();
-      setMessage(delivered > 0 ? "Test sent" : "Nothing delivered — try turning it off and on");
+      const { delivered, error } = await sendTestNotification();
+      setMessage(
+        error
+          ? `Send failed: ${error}`
+          : delivered > 0
+            ? "Test sent"
+            : "Nothing delivered — try turning it off and on"
+      );
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Test failed");
     } finally {
