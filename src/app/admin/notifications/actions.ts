@@ -37,12 +37,12 @@ export async function sendTestNotification() {
   // Returned rather than thrown: production masks thrown server-action
   // messages, which left the phone showing an opaque React error.
   try {
-    const delivered = await sendPushToEmails([profile.email], {
+    const { delivered, errors } = await sendPushToEmails([profile.email], {
       title: "Test notification",
       body: "Booking alerts are on for this phone.",
       url: "/admin/meetings",
     });
-    return { delivered, error: null as string | null };
+    return { delivered, error: errors.length > 0 && delivered === 0 ? errors[0] : null };
   } catch (err) {
     return { delivered: 0, error: err instanceof Error ? err.message : "Send failed" };
   }

@@ -31,12 +31,13 @@ function configureVapid() {
 
 /** Sends to every registered device of the given accounts. Returns how many were delivered. */
 export async function sendPushToEmails(emails: string[], payload: PushPayload) {
-  if (!configureVapid()) return 0;
+  const errors: string[] = [];
+  if (!configureVapid()) return { delivered: 0, errors: ["Push keys are missing on the server"] };
 
   const admin = createAdminClient();
   const { data: profiles } = await admin.from("profiles").select("id").in("email", emails);
   const userIds = (profiles ?? []).map((p) => p.id);
-  if (userIds.length === 0) return 0;
+  if (userIds.length === 0) return { delivered: 0, errors: ["No matching account"] };
 
   const { data: subs } = await admin
     .from("push_subscriptions")
@@ -54,7 +55,8 @@ export async function sendPushToEmails(emails: string[], payload: PushPayload) {
         );
         delivered++;
       } catch (err) {
-        const status = (err as { statusCode?: number }).statusCode;
+        const { statusCode: status, body } = err as { statusCode?: number; body?: string };
+        errors.push(`${status ?? "error"}: ${body || (err instanceof Error ? err.message : "send failed")}`);
         // 404/410 mean the device unsubscribed or the app was removed.
         if (status === 404 || status === 410) {
           await admin.from("push_subscriptions").delete().eq("id", s.id);
@@ -62,7 +64,7 @@ export async function sendPushToEmails(emails: string[], payload: PushPayload) {
       }
     })
   );
-  return delivered;
+  return { delivered, errors };
 }
 
 /** Best-effort: a failed notification must never fail the booking itself. */
