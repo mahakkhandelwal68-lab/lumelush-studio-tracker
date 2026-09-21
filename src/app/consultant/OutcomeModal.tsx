@@ -2,9 +2,15 @@
 
 import { useMemo, useState, useTransition } from "react";
 import type { MeetingResult } from "@/lib/supabase/types";
-import { Button, Field, Input, Textarea } from "@/components/ui";
+import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import { Modal } from "@/components/Modal";
-import { DISPLAY_TIMEZONE, formatDateTime, isoToInputValue } from "@/lib/datetime";
+import {
+  DISPLAY_TIMEZONE,
+  formatDateTime,
+  formatDayDate,
+  formatTime,
+  isoToInputValue,
+} from "@/lib/datetime";
 import {
   AVAILABILITY_HORIZON_DAYS,
   DEFAULT_MEETING_MINUTES,
@@ -49,6 +55,7 @@ export function OutcomeModal({
   windows,
   consultantId,
   busy,
+  existingFollowUpStart,
   analysisTool,
   onClose,
 }: {
@@ -56,6 +63,8 @@ export function OutcomeModal({
   windows: WindowInterval[];
   consultantId: string;
   busy: Interval[];
+  /** Start of the follow-up already booked from this meeting, if any. */
+  existingFollowUpStart: string | null;
   analysisTool?: ToolLink;
   onClose: () => void;
 }) {
@@ -65,11 +74,14 @@ export function OutcomeModal({
   const [packageName, setPackageName] = useState(meeting.package_name ?? "");
   const [analysis, setAnalysis] = useState(meeting.analysis_output ?? "");
   const [notes, setNotes] = useState(meeting.result_notes ?? "");
+  const [followUpDay, setFollowUpDay] = useState("");
   const [followUpStart, setFollowUpStart] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const needsFollowUpSlot = result === "follow_up";
+  // Saving this outcome again must not stack up another follow-up.
+  const alreadyHasFollowUp = existingFollowUpStart !== null;
+  const needsFollowUpSlot = result === "follow_up" && !alreadyHasFollowUp;
 
   // Same day-defaults (open 9-8 when no hours set) and daily cap (8/day)
   // rules the caller's booking screen uses, applied to this one consultant.
@@ -86,12 +98,28 @@ export function OutcomeModal({
     return excludeFullDays(times, meetingsPerDay);
   }, [needsFollowUpSlot, windows, busy]);
 
+  // Free start times grouped by day, so date and time are picked separately.
+  const timesByDay = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const iso of followUpOptions) {
+      const day = isoToInputValue(iso).split("T")[0];
+      map.set(day, [...(map.get(day) ?? []), iso]);
+    }
+    return map;
+  }, [followUpOptions]);
+  const followUpDays = [...timesByDay.keys()];
+  const timesForDay = timesByDay.get(followUpDay) ?? [];
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     if (result === "onboarded" && !packageName.trim()) {
       setError("Add which package they signed up for");
+      return;
+    }
+    if (needsFollowUpSlot && followUpDay && !followUpStart) {
+      setError("Pick a time for the follow-up, or clear the date to skip it.");
       return;
     }
 
@@ -199,34 +227,52 @@ export function OutcomeModal({
                 back to book the follow-up.
               </p>
             ) : (
-              <div className="grid max-h-44 grid-cols-2 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-3">
-                {followUpOptions.slice(0, 60).map((iso) => {
-                  const active = iso === followUpStart;
-                  const [day, time] = isoToInputValue(iso).split("T");
-                  return (
-                    <button
-                      key={iso}
-                      type="button"
-                      onClick={() => setFollowUpStart(active ? "" : iso)}
-                      className={`data rounded-lg border px-2 py-1.5 text-left text-xs transition ${
-                        active
-                          ? "border-brand-teal bg-overlay text-ink"
-                          : "border-edge bg-base text-ink-dim hover:border-edge-strong hover:bg-overlay"
-                      }`}
-                    >
-                      <span className="data-num block">{time}</span>
-                      <span className="data-num block text-[10px] text-ink-faint">
-                        {day.slice(5)}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Date">
+                  <Select
+                    value={followUpDay}
+                    onChange={(e) => {
+                      setFollowUpDay(e.target.value);
+                      setFollowUpStart("");
+                    }}
+                  >
+                    <option value="">Choose a date</option>
+                    {followUpDays.map((day) => (
+                      <option key={day} value={day}>
+                        {formatDayDate(timesByDay.get(day)![0])}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Time">
+                  <Select
+                    value={followUpStart}
+                    onChange={(e) => setFollowUpStart(e.target.value)}
+                    disabled={!followUpDay}
+                  >
+                    <option value="">{followUpDay ? "Choose a time" : "Pick a date first"}</option>
+                    {timesForDay.map((iso) => (
+                      <option key={iso} value={iso}>
+                        {formatTime(iso)}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
               </div>
             )}
             <p className="data mt-1.5 text-[11px] text-ink-faint">
-              Times in {DISPLAY_TIMEZONE.replace("_", " ")}
+              Only free times in your hours over the next {AVAILABILITY_HORIZON_DAYS} days ·{" "}
+              {DISPLAY_TIMEZONE.replace("_", " ")}
             </p>
           </fieldset>
+        )}
+
+        {result === "follow_up" && alreadyHasFollowUp && (
+          <p className="rounded-lg border border-edge bg-base px-3 py-3 text-sm text-ink-dim">
+            A follow-up is already booked for{" "}
+            <span className="text-ink">{formatDateTime(existingFollowUpStart)}</span>. Saving won&apos;t
+            book another.
+          </p>
         )}
 
         <Field

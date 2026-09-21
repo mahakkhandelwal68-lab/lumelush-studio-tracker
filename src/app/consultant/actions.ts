@@ -7,7 +7,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { MeetingResult } from "@/lib/supabase/types";
 import { LOCK_WINDOW_HOURS, isInsideLockWindow } from "@/lib/policy";
-import { DAY_END_HOUR, DAY_START_HOUR } from "@/lib/scheduling";
+import { AVAILABILITY_HORIZON_DAYS, DAY_END_HOUR, DAY_START_HOUR } from "@/lib/scheduling";
 import { inputValueToISO } from "@/lib/datetime";
 
 function pad2(n: number) {
@@ -289,6 +289,27 @@ export async function bookFollowUp(
 ) {
   const { profile } = await requireProfile("consultant");
   const supabase = await createClient();
+
+  if (new Date(startTime).getTime() > Date.now() + AVAILABILITY_HORIZON_DAYS * 24 * 60 * 60 * 1000) {
+    throw new Error(`Follow-ups can be booked up to ${AVAILABILITY_HORIZON_DAYS} days ahead.`);
+  }
+
+  // One follow-up per meeting: saving the outcome twice (a retry, a second
+  // tap) used to book a fresh follow-up each time and leave the extras behind.
+  const { data: original, error: originalError } = await supabase
+    .from("meetings")
+    .select("follow_up_meeting_id")
+    .eq("id", originalMeetingId)
+    .single();
+  if (originalError) throw new Error(originalError.message);
+  if (original.follow_up_meeting_id) {
+    const { data: existing } = await supabase
+      .from("meetings")
+      .select("id")
+      .eq("id", original.follow_up_meeting_id)
+      .maybeSingle();
+    if (existing) throw new Error("A follow-up is already booked for this meeting.");
+  }
 
   const { data: created, error } = await supabase.rpc("book_meeting_at", {
     p_lead_id: leadId,

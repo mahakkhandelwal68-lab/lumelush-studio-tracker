@@ -22,6 +22,7 @@ export interface MeetingRow {
   location_type: "google_meet" | "phone";
   location_detail: string | null;
   guest_email: string | null;
+  follow_up_meeting_id: string | null;
   lead_id: string;
   leads: {
     name: string;
@@ -238,6 +239,9 @@ export function MeetingsBoard({
           windows={windows}
           consultantId={consultantId}
           busy={meetings.map((m) => ({ start: m.scheduled_start, end: m.scheduled_end }))}
+          existingFollowUpStart={
+            meetings.find((m) => m.id === outcomeFor.follow_up_meeting_id)?.scheduled_start ?? null
+          }
           analysisTool={tools.find((t) => t.key === "meeting_analysis")}
           onClose={() => setOutcomeFor(null)}
         />

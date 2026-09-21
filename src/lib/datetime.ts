@@ -49,6 +49,18 @@ export function formatDayDateTime(iso: string) {
   return DAY_DATE_TIME_FMT.format(new Date(iso));
 }
 
+const DAY_DATE_FMT = new Intl.DateTimeFormat("en-GB", {
+  timeZone: DISPLAY_TIMEZONE,
+  weekday: "short",
+  day: "2-digit",
+  month: "short",
+});
+
+/** e.g. "Mon, 22 Sept" */
+export function formatDayDate(iso: string) {
+  return DAY_DATE_FMT.format(new Date(iso));
+}
+
 /** e.g. "11:00 am" */
 export function formatTime(iso: string) {
   return TIME_FMT.format(new Date(iso));
