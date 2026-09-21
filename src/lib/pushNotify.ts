@@ -35,14 +35,22 @@ export async function sendPushToEmails(emails: string[], payload: PushPayload) {
   if (!configureVapid()) return { delivered: 0, errors: ["Push keys are missing on the server"] };
 
   const admin = createAdminClient();
-  const { data: profiles } = await admin.from("profiles").select("id").in("email", emails);
+  const { data: profiles, error: profileError } = await admin
+    .from("profiles")
+    .select("id")
+    .in("email", emails);
+  if (profileError) return { delivered: 0, errors: [`Account lookup failed: ${profileError.message}`] };
   const userIds = (profiles ?? []).map((p) => p.id);
-  if (userIds.length === 0) return { delivered: 0, errors: ["No matching account"] };
+  if (userIds.length === 0) {
+    return { delivered: 0, errors: [`No matching account (looked for ${emails.join(", ")})`] };
+  }
 
-  const { data: subs } = await admin
+  const { data: subs, error: subsError } = await admin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .in("user_id", userIds);
+  if (subsError) return { delivered: 0, errors: [`Device lookup failed: ${subsError.message}`] };
+  if (!subs || subs.length === 0) return { delivered: 0, errors: ["No devices registered"] };
 
   let delivered = 0;
   await Promise.all(
