@@ -24,6 +24,7 @@ interface MeetingRow {
   locationDetail: string | null;
   result: MeetingResult;
   callerId: string;
+  consultantId: string;
   calledBy: string;
   consultant: string;
   lead: LeadInfo | null;
@@ -33,6 +34,8 @@ interface Sdr {
   id: string;
   full_name: string;
 }
+
+type GroupBy = "caller" | "consultant";
 
 const RESULT_LABEL: Record<MeetingResult, string> = {
   pending: "Pending",
@@ -59,21 +62,36 @@ function websiteHref(url: string) {
   return url.startsWith("http") ? url : `https://${url}`;
 }
 
-export function MeetingsTable({ rows, sdrs }: { rows: MeetingRow[]; sdrs: Sdr[] }) {
+export function MeetingsTable({
+  rows,
+  sdrs,
+  consultants,
+}: {
+  rows: MeetingRow[];
+  sdrs: Sdr[];
+  consultants: Sdr[];
+}) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [groupBy, setGroupBy] = useState<GroupBy>("caller");
   const [activeSdr, setActiveSdr] = useState<string>("all");
+  const [activeConsultant, setActiveConsultant] = useState<string>("all");
+
+  const people = groupBy === "caller" ? sdrs : consultants;
+  const activePerson = groupBy === "caller" ? activeSdr : activeConsultant;
+  const setActivePerson = groupBy === "caller" ? setActiveSdr : setActiveConsultant;
+  const idKey: "callerId" | "consultantId" = groupBy === "caller" ? "callerId" : "consultantId";
 
   const bySdr = useMemo(() => {
-    if (activeSdr === "all") return rows;
-    return rows.filter((r) => r.callerId === activeSdr);
-  }, [rows, activeSdr]);
+    if (activePerson === "all") return rows;
+    return rows.filter((r) => r[idKey] === activePerson);
+  }, [rows, activePerson, idKey]);
 
   const countBySdr = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const r of rows) counts.set(r.callerId, (counts.get(r.callerId) ?? 0) + 1);
+    for (const r of rows) counts.set(r[idKey], (counts.get(r[idKey]) ?? 0) + 1);
     return counts;
-  }, [rows]);
+  }, [rows, idKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,7 +112,12 @@ export function MeetingsTable({ rows, sdrs }: { rows: MeetingRow[]; sdrs: Sdr[] 
   }, [bySdr, query]);
 
   function switchSdr(id: string) {
-    setActiveSdr(id);
+    setActivePerson(id);
+    setPage(1);
+  }
+
+  function switchGroup(next: GroupBy) {
+    setGroupBy(next);
     setPage(1);
   }
 
@@ -104,30 +127,52 @@ export function MeetingsTable({ rows, sdrs }: { rows: MeetingRow[]; sdrs: Sdr[] 
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex gap-1 overflow-x-auto border-b border-edge px-5 pt-4">
-        <button
-          onClick={() => switchSdr("all")}
-          className={`data shrink-0 rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
-            activeSdr === "all"
-              ? "border-x border-t border-edge bg-raised text-ink"
-              : "text-ink-faint hover:text-ink-dim"
-          }`}
-        >
-          All ({rows.length})
-        </button>
-        {sdrs.map((sdr) => (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-5 pt-4">
+        <div className="flex gap-1 overflow-x-auto">
           <button
-            key={sdr.id}
-            onClick={() => switchSdr(sdr.id)}
+            onClick={() => switchSdr("all")}
             className={`data shrink-0 rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
-              activeSdr === sdr.id
+              activePerson === "all"
                 ? "border-x border-t border-edge bg-raised text-ink"
                 : "text-ink-faint hover:text-ink-dim"
             }`}
           >
-            {sdr.full_name} ({countBySdr.get(sdr.id) ?? 0})
+            All ({rows.length})
           </button>
-        ))}
+          {people.map((person) => (
+            <button
+              key={person.id}
+              onClick={() => switchSdr(person.id)}
+              className={`data shrink-0 rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
+                activePerson === person.id
+                  ? "border-x border-t border-edge bg-raised text-ink"
+                  : "text-ink-faint hover:text-ink-dim"
+              }`}
+            >
+              {person.full_name} ({countBySdr.get(person.id) ?? 0})
+            </button>
+          ))}
+        </div>
+
+        {/* Same meetings, grouped either by who booked them or who they went to. */}
+        <div className="data mb-2 flex shrink-0 gap-0.5 rounded-lg border border-edge-strong bg-overlay p-0.5 text-xs">
+          <button
+            onClick={() => switchGroup("caller")}
+            className={`rounded-md px-2.5 py-1 font-medium transition ${
+              groupBy === "caller" ? "bg-raised text-ink" : "text-ink-faint hover:text-ink-dim"
+            }`}
+          >
+            By SDR
+          </button>
+          <button
+            onClick={() => switchGroup("consultant")}
+            className={`rounded-md px-2.5 py-1 font-medium transition ${
+              groupBy === "consultant" ? "bg-raised text-ink" : "text-ink-faint hover:text-ink-dim"
+            }`}
+          >
+            By consultant
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-5 py-4">

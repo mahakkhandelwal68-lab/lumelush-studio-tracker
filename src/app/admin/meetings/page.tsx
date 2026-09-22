@@ -18,6 +18,9 @@ export default async function AdminMeetingsPage() {
   const sdrs = (profiles ?? [])
     .filter((p) => p.role === "caller")
     .map((p) => ({ id: p.id, full_name: p.full_name }));
+  const consultants = (profiles ?? [])
+    .filter((p) => p.role === "consultant")
+    .map((p) => ({ id: p.id, full_name: p.full_name }));
 
   const rows = (meetings ?? []).map((m) => ({
     id: m.id,
@@ -27,6 +30,7 @@ export default async function AdminMeetingsPage() {
     locationDetail: m.location_detail,
     result: m.result,
     callerId: m.caller_id,
+    consultantId: m.consultant_id,
     calledBy: nameById[m.caller_id] ?? "—",
     consultant: nameById[m.consultant_id] ?? "—",
     lead: m.leads,
@@ -41,7 +45,7 @@ export default async function AdminMeetingsPage() {
           and when.
         </p>
       </div>
-      <MeetingsTable rows={rows} sdrs={sdrs} />
+      <MeetingsTable rows={rows} sdrs={sdrs} consultants={consultants} />
     </div>
   );
 }
