@@ -506,14 +506,6 @@ function LeadRow({
             </Button>
           ) : lead.status === "booked" ? null : (
             <>
-              {history && history.attempts > 0 && (
-                <span
-                  title={`${history.attempts} ${history.attempts === 1 ? "call" : "calls"} logged`}
-                  className="data-num inline-flex items-center rounded-full border border-edge-strong bg-overlay px-2 py-0.5 text-[11px] font-semibold text-ink-dim"
-                >
-                  {history.attempts}
-                </span>
-              )}
               <Button size="sm" onClick={onCall}>
                 Log call
               </Button>
