@@ -260,7 +260,21 @@ export function LeadsCard({
               }
             />
           ) : (
-            <table className="w-full min-w-[880px] border-collapse">
+            <table className="w-full min-w-[880px] table-fixed border-collapse">
+              {/* Explicit widths (table-fixed) — without these, the browser's
+                  auto layout gave Location/Website leftover space that a long
+                  address's unwrapped width implies, leaving a visible gap
+                  before Status even though Status sits right before it in
+                  the markup. */}
+              <colgroup>
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
+                <col className="w-[12%]" />
+                <col className="w-[14%]" />
+                <col className="w-[11%]" />
+                <col className="w-[20%]" />
+                <col className="w-[17%]" />
+              </colgroup>
               <thead className="sticky top-0 z-10 bg-raised">
                 <tr className="border-b border-edge">
                   <th className={COL_HEAD}>Lead</th>
@@ -411,7 +425,7 @@ function LeadRow({
         )}
       </td>
 
-      <td className="max-w-[16rem] px-3 py-3">
+      <td className="px-3 py-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {overdue && <Badge tone="callback">overdue</Badge>}
 
