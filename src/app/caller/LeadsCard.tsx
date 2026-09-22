@@ -547,6 +547,15 @@ function LeadRow({
                 {history?.lastNotes ? `“${history.lastNotes}”` : <span className="text-ink-faint">No comment left</span>}
               </p>
             </div>
+
+            <div>
+              <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
+                Calls made
+              </p>
+              <p className="data-num text-sm font-semibold text-ink">
+                {history?.attempts ?? 0}
+              </p>
+            </div>
           </div>
         </td>
       </tr>
