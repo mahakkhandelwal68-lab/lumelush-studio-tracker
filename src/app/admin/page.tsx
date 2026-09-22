@@ -41,6 +41,7 @@ export default async function AdminReportingPage() {
     { data: profiles },
     { data: callsToday },
     { data: meetingsToday },
+    { data: upcomingToday },
   ] = await Promise.all([
     supabase.from("leads").select("*", { count: "exact", head: true }),
     supabase.from("calls").select("outcome"),
@@ -58,6 +59,17 @@ export default async function AdminReportingPage() {
       )
       .gte("created_at", startOfToday.toISOString())
       .lt("created_at", endOfToday.toISOString())
+      .order("scheduled_start", { ascending: true }),
+    // Still to happen today — scheduled for today and not yet started,
+    // regardless of when it was booked. Different from "booked today" above,
+    // which is about when the booking was made, not when the meeting is.
+    supabase
+      .from("meetings")
+      .select(
+        "id, scheduled_start, location_type, caller_id, consultant_id, result, leads(name, business_name)"
+      )
+      .gte("scheduled_start", new Date().toISOString())
+      .lt("scheduled_start", endOfToday.toISOString())
       .order("scheduled_start", { ascending: true }),
   ]);
 
@@ -241,6 +253,60 @@ export default async function AdminReportingPage() {
                     </td>
                     <td className="data-num px-4 py-3 text-sm text-ink-faint">
                       {formatTime(m.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <CardHeader
+          title="Upcoming meetings today"
+          subtitle="Still to happen today, soonest first."
+        />
+        <div className="overflow-auto">
+          {(upcomingToday ?? []).length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-ink-faint">
+              Nothing left on the calendar for today.
+            </p>
+          ) : (
+            <table className="w-full min-w-[760px] border-collapse">
+              <thead className="bg-overlay">
+                <tr className="border-b border-edge">
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Lead
+                  </th>
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Booked by
+                  </th>
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Consultant
+                  </th>
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Time
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-edge">
+                {(upcomingToday ?? []).map((m) => (
+                  <tr key={m.id} className="transition hover:bg-hover/60">
+                    <td className="data px-4 py-3 text-sm text-ink">
+                      {m.leads?.business_name ?? m.leads?.name ?? "Unknown lead"}
+                      {m.leads?.business_name && m.leads?.name && (
+                        <span className="data block text-xs text-ink-faint">{m.leads.name}</span>
+                      )}
+                    </td>
+                    <td className="data px-4 py-3 text-sm text-ink-dim">
+                      {nameById.get(m.caller_id) ?? "—"}
+                    </td>
+                    <td className="data px-4 py-3 text-sm text-ink-dim">
+                      {nameById.get(m.consultant_id) ?? "—"}
+                    </td>
+                    <td className="data-num px-4 py-3 text-sm text-ink">
+                      {formatTime(m.scheduled_start)}
                     </td>
                   </tr>
                 ))}
