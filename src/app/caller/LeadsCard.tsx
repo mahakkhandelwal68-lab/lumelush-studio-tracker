@@ -542,18 +542,13 @@ function LeadRow({
             <div className="min-w-[12rem] flex-1">
               <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
                 Comment{history ? ` · logged ${formatDateTime(history.lastAt)}` : ""}
+                {" · "}
+                <span className="data-num text-ink-dim normal-case">
+                  {history?.attempts ?? 0} {history?.attempts === 1 ? "call" : "calls"} made
+                </span>
               </p>
               <p className="text-sm whitespace-pre-wrap text-ink">
                 {history?.lastNotes ? `“${history.lastNotes}”` : <span className="text-ink-faint">No comment left</span>}
-              </p>
-            </div>
-
-            <div>
-              <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
-                Calls made
-              </p>
-              <p className="data-num text-sm font-semibold text-ink">
-                {history?.attempts ?? 0}
               </p>
             </div>
           </div>
