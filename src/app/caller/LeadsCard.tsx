@@ -492,6 +492,14 @@ function LeadRow({
             </Button>
           ) : lead.status === "booked" ? null : (
             <>
+              {history && history.attempts > 0 && (
+                <span
+                  title={`${history.attempts} ${history.attempts === 1 ? "call" : "calls"} logged`}
+                  className="data-num inline-flex items-center rounded-full border border-edge-strong bg-overlay px-2 py-0.5 text-[11px] font-semibold text-ink-dim"
+                >
+                  {history.attempts}
+                </span>
+              )}
               <Button size="sm" onClick={onCall}>
                 Log call
               </Button>
@@ -542,10 +550,6 @@ function LeadRow({
             <div className="min-w-[12rem] flex-1">
               <p className="data text-[10px] font-semibold tracking-wide text-ink-dim uppercase">
                 Comment{history ? ` · logged ${formatDateTime(history.lastAt)}` : ""}
-                {" · "}
-                <span className="data-num text-ink-dim normal-case">
-                  {history?.attempts ?? 0} {history?.attempts === 1 ? "call" : "calls"} made
-                </span>
               </p>
               <p className="text-sm whitespace-pre-wrap text-ink">
                 {history?.lastNotes ? `“${history.lastNotes}”` : <span className="text-ink-faint">No comment left</span>}
