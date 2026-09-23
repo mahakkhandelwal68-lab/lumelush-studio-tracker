@@ -47,7 +47,7 @@ export interface ToolLink {
   agent_label: string | null;
 }
 
-type Tab = "upcoming" | "awaiting" | "onboarded" | "follow_up" | "closed";
+type Tab = "upcoming" | "awaiting" | "onboarded" | "follow_up" | "no_show" | "closed";
 
 const TABS: { key: Tab; label: string; blurb: string }[] = [
   {
@@ -71,9 +71,15 @@ const TABS: { key: Tab; label: string; blurb: string }[] = [
     blurb: "Another meeting is needed.",
   },
   {
+    key: "no_show",
+    label: "No show",
+    // Kept and re-booked here rather than being handed back to the SDR.
+    blurb: "Didn't turn up. Re-book them from here.",
+  },
+  {
     key: "closed",
     label: "Closed",
-    blurb: "Not interested, or didn't show.",
+    blurb: "Not interested.",
   },
 ];
 
@@ -152,6 +158,7 @@ export function MeetingsBoard({
       awaiting: [],
       onboarded: [],
       follow_up: [],
+      no_show: [],
       closed: [],
     };
     for (const m of meetings) {
@@ -159,6 +166,7 @@ export function MeetingsBoard({
         (m.scheduled_end < now ? map.awaiting : map.upcoming).push(m);
       } else if (m.result === "onboarded") map.onboarded.push(m);
       else if (m.result === "follow_up") map.follow_up.push(m);
+      else if (m.result === "no_show") map.no_show.push(m);
       else map.closed.push(m);
     }
     return map;

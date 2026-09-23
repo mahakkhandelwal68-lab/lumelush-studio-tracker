@@ -257,14 +257,9 @@ export async function logMeetingResult(input: {
   if (error) throw new Error(error.message);
 
   // Push the lead back into the right place for whoever owns it next.
-  if (input.result === "no_show") {
-    // Goes back to the caller who booked it, into their own No-show sheet
-    // so they can chase and re-book.
-    await supabase
-      .from("leads")
-      .update({ status: "no_show", follow_up_at: new Date().toISOString() })
-      .eq("id", meeting.lead_id);
-  } else if (input.result === "not_interested") {
+  // No-show is deliberately NOT sent back to the SDR's queue anymore — the
+  // consultant tracks and re-books it themselves from their own No-show tab.
+  if (input.result === "not_interested") {
     await supabase
       .from("leads")
       .update({

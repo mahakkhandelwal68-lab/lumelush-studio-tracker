@@ -46,7 +46,7 @@ const OUTCOMES: {
   {
     value: "no_show",
     label: "No show",
-    desc: "Didn't turn up. Goes back to the SDR to re-book.",
+    desc: "Didn't turn up. Tracked on your own No-show tab — re-book them below.",
   },
 ];
 
@@ -79,9 +79,12 @@ export function OutcomeModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Saving this outcome again must not stack up another follow-up.
+  // Saving this outcome again must not stack up another follow-up. No-show
+  // reuses the same "book the next attempt" slot picker as follow-up, since
+  // no-shows are no longer handed back to the SDR to re-book.
   const alreadyHasFollowUp = existingFollowUpStart !== null;
-  const needsFollowUpSlot = result === "follow_up" && !alreadyHasFollowUp;
+  const needsFollowUpSlot =
+    (result === "follow_up" || result === "no_show") && !alreadyHasFollowUp;
 
   // Same day-defaults (open 9-8 when no hours set) and daily cap (8/day)
   // rules the caller's booking screen uses, applied to this one consultant.
@@ -119,7 +122,11 @@ export function OutcomeModal({
       return;
     }
     if (needsFollowUpSlot && followUpDay && !followUpStart) {
-      setError("Pick a time for the follow-up, or clear the date to skip it.");
+      setError(
+        result === "no_show"
+          ? "Pick a time to re-book, or clear the date to skip it."
+          : "Pick a time for the follow-up, or clear the date to skip it."
+      );
       return;
     }
 
@@ -134,13 +141,17 @@ export function OutcomeModal({
         });
 
         if (needsFollowUpSlot && followUpStart) {
+          const label =
+            result === "no_show"
+              ? `No-show re-book, was ${formatDateTime(meeting.scheduled_start)}.`
+              : `Follow-up from ${formatDateTime(meeting.scheduled_start)}.`;
           await bookFollowUp(
             meeting.id,
             meeting.lead_id,
             consultantId,
             followUpStart,
             DEFAULT_MEETING_MINUTES,
-            `Follow-up from ${formatDateTime(meeting.scheduled_start)}. ${notes}`.trim()
+            `${label} ${notes}`.trim()
           );
         }
 
@@ -219,12 +230,12 @@ export function OutcomeModal({
         {needsFollowUpSlot && (
           <fieldset>
             <legend className="data mb-1.5 block text-xs font-medium tracking-wide text-ink-dim uppercase">
-              Book the follow-up
+              {result === "no_show" ? "Re-book them" : "Book the follow-up"}
             </legend>
             {followUpOptions.length === 0 ? (
               <p className="rounded-lg border border-edge bg-base px-3 py-3 text-sm text-ink-faint">
                 No free time in your availability. Add hours first, then come
-                back to book the follow-up.
+                back to book {result === "no_show" ? "them again" : "the follow-up"}.
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -267,9 +278,9 @@ export function OutcomeModal({
           </fieldset>
         )}
 
-        {result === "follow_up" && alreadyHasFollowUp && (
+        {(result === "follow_up" || result === "no_show") && alreadyHasFollowUp && (
           <p className="rounded-lg border border-edge bg-base px-3 py-3 text-sm text-ink-dim">
-            A follow-up is already booked for{" "}
+            {result === "no_show" ? "A re-book is" : "A follow-up is"} already booked for{" "}
             <span className="text-ink">{formatDateTime(existingFollowUpStart)}</span>. Saving won&apos;t
             book another.
           </p>
