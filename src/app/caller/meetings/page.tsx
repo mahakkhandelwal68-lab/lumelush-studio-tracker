@@ -3,6 +3,7 @@ import { Badge, Card, CardHeader, EmptyState } from "@/components/ui";
 import { formatDateTime } from "@/lib/datetime";
 import { MeetingLinkCell } from "@/app/caller/MeetingLinkCell";
 import { StatCard } from "@/components/sdr/StatCard";
+import { representativeMeetingByLead } from "@/lib/meetingStatus";
 import type { MeetingResult } from "@/lib/supabase/types";
 
 const COL_HEAD =
@@ -58,10 +59,17 @@ export default async function CallerMeetingsPage() {
   const { data: meetings } = await supabase
     .from("meetings")
     .select("*, leads(name, business_name, ref, phone, location)")
-    .order("scheduled_start", { ascending: false });
+    .order("scheduled_start", { ascending: true });
 
-  const all = meetings ?? [];
   const nowIso = new Date().toISOString();
+
+  // One row per lead — the meeting that represents its current status, not
+  // every meeting ever booked for it. A no-show or follow-up that got a
+  // fresh re-book meeting keeps showing its last decided stage here until
+  // that new meeting itself is given an outcome (see lib/meetingStatus.ts).
+  const all = [...representativeMeetingByLead(meetings ?? []).values()].sort(
+    (a, b) => b.scheduled_start.localeCompare(a.scheduled_start)
+  );
 
   const onboardedCount = all.filter((m) => m.result === "onboarded").length;
   const upcomingCount = all.filter(
@@ -76,13 +84,13 @@ export default async function CallerMeetingsPage() {
           Booked meetings
         </h1>
         <p className="mt-1 text-sm text-ink-dim">
-          Every meeting booked for leads you handed off to a consultant — what
-          happened, whether they showed, and where each one stands.
+          One row per lead you handed off to a consultant — what happened,
+          whether they showed, and where each one stands now.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard tone="blue" icon={<CalendarGlyph />} label="Total meetings" value={all.length} />
+        <StatCard tone="blue" icon={<CalendarGlyph />} label="Leads met with" value={all.length} />
         <StatCard tone="purple" icon={<CalendarGlyph />} label="Upcoming" value={upcomingCount} />
         <StatCard tone="green" icon={<CalendarGlyph />} label="Onboarded" value={onboardedCount} />
         <StatCard tone="red" icon={<CalendarGlyph />} label="No-shows" value={noShowCount} />

@@ -1,22 +1,7 @@
 import { requireProfile } from "@/lib/auth";
-import { LeadsCard, type MeetingStatus } from "@/app/caller/LeadsCard";
+import { LeadsCard } from "@/app/caller/LeadsCard";
 import { BookingCard } from "@/app/caller/BookingCard";
-import type { MeetingResult } from "@/lib/supabase/types";
-
-/** Labels the lead's current meeting status without revealing the mechanics
- * behind it (e.g. that a re-book or follow-up meeting exists) — a caller
- * just needs to know where things stand, not the meeting bookkeeping. */
-function statusFor(result: MeetingResult, scheduledStart: string, now: string): MeetingStatus {
-  if (result === "pending") {
-    return scheduledStart > now
-      ? { label: "Meeting upcoming", tone: "new" }
-      : { label: "Awaiting outcome", tone: "neutral" };
-  }
-  if (result === "follow_up") return { label: "Follow-up scheduled", tone: "callback" };
-  if (result === "no_show") return { label: "No show", tone: "noanswer" };
-  if (result === "not_interested") return { label: "Closed", tone: "dead" };
-  return { label: "Onboarded", tone: "booked" };
-}
+import { representativeMeetingByLead, stageFor } from "@/lib/meetingStatus";
 
 export default async function CallerLeadsPage() {
   const { supabase, profile } = await requireProfile("caller");
@@ -69,30 +54,19 @@ export default async function CallerLeadsPage() {
     }
   }
 
-  // The lead's status reflects its most recently DECIDED meeting (the latest
-  // one with a real outcome), falling back to a still-pending meeting if
-  // nothing has been decided yet. This deliberately hides the mechanics of
-  // a re-book/follow-up meeting existing — once that new meeting is held and
-  // given its own outcome, the status simply updates to reflect it.
+  // One representative meeting per lead — see meetingStatus.ts for why (it's
+  // what hides a re-book/follow-up meeting until it has its own outcome).
   const nowIso = new Date().toISOString();
-  const latestByLead = new Map<string, { result: MeetingResult; scheduled_start: string }>();
-  for (const m of [...allMeetings].sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start))) {
-    const existing = latestByLead.get(m.lead_id);
-    if (!existing || m.result !== "pending" || existing.result === "pending") {
-      latestByLead.set(m.lead_id, m);
-    }
-  }
-  const meetingStatus: Record<string, MeetingStatus> = {};
-  for (const [leadId, m] of latestByLead) {
-    meetingStatus[leadId] = statusFor(m.result, m.scheduled_start, nowIso);
-  }
+  const repByLead = representativeMeetingByLead(allMeetings);
 
+  const meetingStatus: Record<string, ReturnType<typeof stageFor>> = {};
   const meetingLinks: Record<
     string,
     { locationType: "google_meet" | "phone"; locationDetail: string | null }
   > = {};
-  for (const m of allMeetings) {
-    meetingLinks[m.lead_id] = {
+  for (const [leadId, m] of repByLead) {
+    meetingStatus[leadId] = stageFor(m.result, m.scheduled_start, nowIso);
+    meetingLinks[leadId] = {
       locationType: m.location_type,
       locationDetail: m.location_detail,
     };
