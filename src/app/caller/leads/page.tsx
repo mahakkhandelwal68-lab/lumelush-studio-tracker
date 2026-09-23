@@ -1,6 +1,22 @@
 import { requireProfile } from "@/lib/auth";
-import { LeadsCard } from "@/app/caller/LeadsCard";
+import { LeadsCard, type MeetingStatus } from "@/app/caller/LeadsCard";
 import { BookingCard } from "@/app/caller/BookingCard";
+import type { MeetingResult } from "@/lib/supabase/types";
+
+/** Labels the lead's current meeting status without revealing the mechanics
+ * behind it (e.g. that a re-book or follow-up meeting exists) — a caller
+ * just needs to know where things stand, not the meeting bookkeeping. */
+function statusFor(result: MeetingResult, scheduledStart: string, now: string): MeetingStatus {
+  if (result === "pending") {
+    return scheduledStart > now
+      ? { label: "Meeting upcoming", tone: "new" }
+      : { label: "Awaiting outcome", tone: "neutral" };
+  }
+  if (result === "follow_up") return { label: "Follow-up scheduled", tone: "callback" };
+  if (result === "no_show") return { label: "No show", tone: "noanswer" };
+  if (result === "not_interested") return { label: "Closed", tone: "dead" };
+  return { label: "Onboarded", tone: "booked" };
+}
 
 export default async function CallerLeadsPage() {
   const { supabase, profile } = await requireProfile("caller");
@@ -53,11 +69,22 @@ export default async function CallerLeadsPage() {
     }
   }
 
-  const meetingCounts: Record<string, { total: number; held: number }> = {};
-  for (const m of allMeetings) {
-    const entry = (meetingCounts[m.lead_id] ??= { total: 0, held: 0 });
-    entry.total += 1;
-    if (m.result !== "pending") entry.held += 1;
+  // The lead's status reflects its most recently DECIDED meeting (the latest
+  // one with a real outcome), falling back to a still-pending meeting if
+  // nothing has been decided yet. This deliberately hides the mechanics of
+  // a re-book/follow-up meeting existing — once that new meeting is held and
+  // given its own outcome, the status simply updates to reflect it.
+  const nowIso = new Date().toISOString();
+  const latestByLead = new Map<string, { result: MeetingResult; scheduled_start: string }>();
+  for (const m of [...allMeetings].sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start))) {
+    const existing = latestByLead.get(m.lead_id);
+    if (!existing || m.result !== "pending" || existing.result === "pending") {
+      latestByLead.set(m.lead_id, m);
+    }
+  }
+  const meetingStatus: Record<string, MeetingStatus> = {};
+  for (const [leadId, m] of latestByLead) {
+    meetingStatus[leadId] = statusFor(m.result, m.scheduled_start, nowIso);
   }
 
   const meetingLinks: Record<
@@ -84,7 +111,7 @@ export default async function CallerLeadsPage() {
         <LeadsCard
           leads={allLeads}
           history={Object.fromEntries(history)}
-          meetingCounts={meetingCounts}
+          meetingStatus={meetingStatus}
           meetingLinks={meetingLinks}
           consultants={consultants ?? []}
           now={new Date().toISOString()}

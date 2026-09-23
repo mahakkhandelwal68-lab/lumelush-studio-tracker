@@ -33,9 +33,11 @@ export interface LeadHistory {
   lastNotes: string | null;
 }
 
-export interface MeetingCount {
-  total: number;
-  held: number;
+/** A simple status word for the lead's meeting, not the meeting mechanics
+ * behind it (e.g. that a re-book or follow-up meeting now exists). */
+export interface MeetingStatus {
+  label: string;
+  tone: "neutral" | "new" | "callback" | "noanswer" | "dead" | "booked";
 }
 
 export interface MeetingLink {
@@ -132,14 +134,14 @@ const COL_HEAD =
 export function LeadsCard({
   leads,
   history,
-  meetingCounts,
+  meetingStatus,
   meetingLinks,
   consultants,
   now,
 }: {
   leads: Lead[];
   history: Record<string, LeadHistory>;
-  meetingCounts: Record<string, MeetingCount>;
+  meetingStatus: Record<string, MeetingStatus>;
   meetingLinks: Record<string, MeetingLink>;
   consultants: Consultant[];
   now: string;
@@ -296,7 +298,7 @@ export function LeadsCard({
                     key={lead.id}
                     lead={lead}
                     history={history[lead.id]}
-                    meetings={meetingCounts[lead.id]}
+                    meetingStatus={meetingStatus[lead.id]}
                     meetingLink={meetingLinks[lead.id]}
                     now={now}
                     onCall={() => setCallLead(lead)}
@@ -337,7 +339,7 @@ function websiteLabel(url: string) {
 function LeadRow({
   lead,
   history,
-  meetings,
+  meetingStatus,
   meetingLink,
   now,
   onCall,
@@ -345,7 +347,7 @@ function LeadRow({
 }: {
   lead: Lead;
   history?: LeadHistory;
-  meetings?: MeetingCount;
+  meetingStatus?: MeetingStatus;
   meetingLink?: MeetingLink;
   now: string;
   onCall: () => void;
@@ -438,26 +440,11 @@ function LeadRow({
             </span>
           )}
 
-          {/* Follow-up rounds with a consultant, incl. ones they booked. */}
-          {meetings && meetings.total > 1 && (
-            <Badge tone="callback">follow-up #{meetings.total - 1}</Badge>
-          )}
-          {meetings && meetings.total === 1 && lead.status === "booked" && (
-            <Badge tone="booked">1st meeting</Badge>
-          )}
         </div>
 
         {exhausted && (
           <p className="data mt-1 text-xs text-status-dead">
             {MAX_ATTEMPTS} unanswered calls — stop chasing.
-          </p>
-        )}
-
-        {meetings && meetings.total > 0 && (
-          <p className="mt-1 text-xs text-ink-faint">
-            <span className="data-num">{meetings.total}</span>
-            {meetings.total === 1 ? " meeting" : " meetings"} ·{" "}
-            <span className="data-num">{meetings.held}</span> held
           </p>
         )}
 
@@ -479,7 +466,11 @@ function LeadRow({
           </p>
         )}
 
-        {lead.status === "booked" && <Badge tone="booked">handed over</Badge>}
+        {lead.status === "booked" && (
+          <Badge tone={meetingStatus?.tone ?? "booked"}>
+            {meetingStatus?.label ?? "Handed over"}
+          </Badge>
+        )}
 
         {lead.status === "booked" && meetingLink && (
           <div className="mt-1.5">
