@@ -8,8 +8,9 @@ export const DAY_END_HOUR = 20; // 20:00
 /** Bookable start times land on these boundaries, so 10:45 is offerable. */
 export const SLOT_GRANULARITY_MINUTES = 15;
 
-/** Default meeting length; a booking blocks this much of the day. */
-export const DEFAULT_MEETING_MINUTES = 60;
+/** Default meeting length; a booking blocks this much of the day, so the
+ * next bookable start after a meeting is this many minutes later. */
+export const DEFAULT_MEETING_MINUTES = 45;
 
 export const MEETING_LENGTH_OPTIONS = [30, 45, 60, 90] as const;
 
