@@ -240,6 +240,22 @@ knowing before adding anything that writes rows frequently:
   their own internal use), they plan to upgrade both platforms to paid tiers
   first — this is a known, deliberate future step, not a gap to flag again.
 
+## No-shows stay with the consultant, not the SDR
+
+A meeting logged as "No show" used to push the lead back into the caller's
+queue (`leads.status = 'no_show'`, with a fresh `follow_up_at`) so the SDR
+would re-chase it. As of the "for now" rule the user asked for, that hand-back
+was removed — logging a no-show no longer touches `leads.status` at all, so
+the lead just stays parked wherever it already was (typically `booked`).
+Consultants instead get their own **No show** tab on their meetings board
+(`src/app/consultant/MeetingsBoard.tsx`), separate from Closed, and logging
+or editing a no-show outcome offers the same date/time re-book picker
+follow-ups use (`src/app/consultant/OutcomeModal.tsx`), calling the same
+`bookFollowUp` action. The caller's own "No show" sheet
+(`src/app/caller/LeadsCard.tsx`) and its Re-book button still exist for any
+leads that were already marked no-show before this change, but nothing new
+lands there going forward.
+
 ## Phone push notifications for meeting bookings (admin only)
 
 Whenever a meeting is booked (SDR booking or a consultant follow-up), the
