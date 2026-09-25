@@ -68,13 +68,13 @@ const TABS: { key: Tab; label: string; blurb: string }[] = [
   {
     key: "follow_up",
     label: "Follow-up",
-    blurb: "Another meeting is needed.",
+    blurb: "Follow-ups still to come.",
   },
   {
     key: "no_show",
     label: "No show",
     // Kept and re-booked here rather than being handed back to the SDR.
-    blurb: "Didn't turn up. Re-book them from here.",
+    blurb: "Didn't turn up — each shows which meeting they stopped at. Re-book from here.",
   },
   {
     key: "closed",
@@ -161,12 +161,20 @@ export function MeetingsBoard({
       no_show: [],
       closed: [],
     };
+    const byId = new Map(meetings.map((x) => [x.id, x]));
     for (const m of meetings) {
       if (m.result === "pending") {
         (m.scheduled_end < now ? map.awaiting : map.upcoming).push(m);
       } else if (m.result === "onboarded") map.onboarded.push(m);
-      else if (m.result === "follow_up") map.follow_up.push(m);
-      else if (m.result === "no_show") map.no_show.push(m);
+      else if (m.result === "follow_up") {
+        // Only follow-ups still to come. Once the booked follow-up has
+        // happened (or been re-decided) the row is history and drops off; a
+        // follow-up with nothing booked yet stays so it isn't forgotten.
+        const next = m.follow_up_meeting_id ? byId.get(m.follow_up_meeting_id) : undefined;
+        if (!next || (next.result === "pending" && next.scheduled_end >= now)) {
+          map.follow_up.push(m);
+        }
+      } else if (m.result === "no_show") map.no_show.push(m);
       else map.closed.push(m);
     }
     return map;
@@ -234,6 +242,9 @@ export function MeetingsBoard({
                 now={now}
                 tools={tools}
                 sequence={sequence.get(m.id)}
+                nextMeetingStart={
+                  meetings.find((x) => x.id === m.follow_up_meeting_id)?.scheduled_start ?? null
+                }
                 onLogOutcome={() => setOutcomeFor(m)}
               />
             ))
@@ -264,12 +275,15 @@ function MeetingCard({
   now,
   tools,
   sequence,
+  nextMeetingStart,
   onLogOutcome,
 }: {
   meeting: MeetingRow;
   now: string;
   tools: ToolLink[];
   sequence?: { index: number; total: number };
+  /** Start of the meeting booked as this one's follow-up/re-book, if any. */
+  nextMeetingStart: string | null;
   onLogOutcome: () => void;
 }) {
   const [busy, setBusy] = useState<"proposal" | "invoice" | null>(null);
@@ -305,6 +319,24 @@ function MeetingCard({
             )}
             {soon && <Badge tone="callback">starting soon</Badge>}
           </div>
+
+          {/* Where in the run of meetings a no-show happened, so it's clear
+              which one they stopped turning up at. */}
+          {meeting.result === "no_show" && sequence && (
+            <p className="data mt-1 text-xs font-medium text-status-noanswer">
+              Stopped showing at:{" "}
+              {sequence.index === 1 ? "first meeting" : `follow-up #${sequence.index - 1}`}
+              {sequence.total > 1 && ` (meeting ${sequence.index} of ${sequence.total})`}
+            </p>
+          )}
+
+          {meeting.result === "follow_up" && (
+            <p className="data mt-1 text-xs font-medium text-status-callback">
+              {nextMeetingStart
+                ? `Follow-up booked for ${formatDateTime(nextMeetingStart)}`
+                : "No follow-up booked yet"}
+            </p>
+          )}
 
           <p className="data mt-0.5 text-xs text-ink-dim">
             {lead?.business_name && lead.name ? `${lead.name} · ` : ""}
