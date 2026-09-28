@@ -55,7 +55,7 @@ export default async function AdminReportingPage() {
     supabase
       .from("meetings")
       .select(
-        "id, created_at, scheduled_start, location_type, caller_id, consultant_id, leads(name, business_name)"
+        "id, created_at, scheduled_start, location_type, caller_id, consultant_id, leads(name, business_name, phone)"
       )
       .gte("created_at", startOfToday.toISOString())
       .lt("created_at", endOfToday.toISOString())
@@ -66,7 +66,7 @@ export default async function AdminReportingPage() {
     supabase
       .from("meetings")
       .select(
-        "id, scheduled_start, location_type, caller_id, consultant_id, result, leads(name, business_name)"
+        "id, scheduled_start, location_type, caller_id, consultant_id, result, leads(name, business_name, phone)"
       )
       .gte("scheduled_start", new Date().toISOString())
       .lt("scheduled_start", endOfToday.toISOString())
@@ -220,6 +220,9 @@ export default async function AdminReportingPage() {
                     Lead
                   </th>
                   <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Phone
+                  </th>
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
                     Booked by
                   </th>
                   <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
@@ -241,6 +244,9 @@ export default async function AdminReportingPage() {
                       {m.leads?.business_name && m.leads?.name && (
                         <span className="data block text-xs text-ink-faint">{m.leads.name}</span>
                       )}
+                    </td>
+                    <td className="data-num px-4 py-3 text-sm text-ink-dim">
+                      {m.leads?.phone ?? "—"}
                     </td>
                     <td className="data px-4 py-3 text-sm text-ink-dim">
                       {nameById.get(m.caller_id) ?? "—"}
@@ -280,6 +286,9 @@ export default async function AdminReportingPage() {
                     Lead
                   </th>
                   <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
+                    Phone
+                  </th>
+                  <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
                     Booked by
                   </th>
                   <th className="data px-4 py-2.5 text-left text-[11px] font-medium tracking-wide text-ink-faint uppercase">
@@ -298,6 +307,9 @@ export default async function AdminReportingPage() {
                       {m.leads?.business_name && m.leads?.name && (
                         <span className="data block text-xs text-ink-faint">{m.leads.name}</span>
                       )}
+                    </td>
+                    <td className="data-num px-4 py-3 text-sm text-ink-dim">
+                      {m.leads?.phone ?? "—"}
                     </td>
                     <td className="data px-4 py-3 text-sm text-ink-dim">
                       {nameById.get(m.caller_id) ?? "—"}
