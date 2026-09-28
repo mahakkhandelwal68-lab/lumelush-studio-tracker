@@ -12,6 +12,7 @@ import { Badge, Button, Card, CardHeader, Field, Input, Select } from "@/compone
 
 interface Lead {
   id: string;
+  ref: string;
   name: string;
   business_name: string | null;
   phone: string | null;
@@ -378,6 +379,9 @@ export function LeadsTable({
                       </td>
                     )}
                     <td className="data px-3 py-3 text-sm text-ink">
+                      <span className="data-num mb-0.5 mr-1.5 inline-block rounded border border-edge-strong bg-overlay px-1.5 py-0.5 text-[10px] text-ink-faint">
+                        {lead.ref}
+                      </span>
                       {lead.name}
                       {lead.source && (
                         <span className="data mt-0.5 block text-xs text-ink-faint">
