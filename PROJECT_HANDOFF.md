@@ -112,6 +112,32 @@ Admin can invite new accounts *and* permanently delete them (not just
 deactivate) from Admin → Users. Izhan (the original sole caller account) was
 permanently deleted this session and replaced by the 4 caller accounts above.
 
+## Admin → Leads has a scoped-down "All leads" tab
+
+Alongside the existing "New leads" and "Assigned leads" tabs,
+`src/app/admin/leads/LeadsTable.tsx` has a third **All leads** tab (the
+default one shown) that is deliberately *not* everything — it's new
+(unassigned) leads plus whatever's currently assigned to Karan specifically,
+keyed by email (`ALL_LEADS_TAB_CALLER_EMAIL` in
+[src/app/admin/leads/page.tsx](src/app/admin/leads/page.tsx)), same pattern
+as the Karan→Sarah booking rule below. Leads assigned to any other
+caller don't show there. This means any newly-added batch of leads (status
+`new` by default) automatically shows up in this tab with no extra work —
+that was the point, per the user's request that future lead imports land
+there. Repoint or remove `ALL_LEADS_TAB_CALLER_EMAIL` if this scoping is no
+longer wanted.
+
+**Process note for future lead imports:** the user wants every new batch of
+leads checked for duplicates against what's already in the `leads` table
+(by phone number) before inserting, with any matches reported back — not
+silently skipped or silently inserted. Also, if the leads come from a
+source Google Maps listing rows for multiple cities/areas at once (like the
+302-lead Jaipur/Ludhiana/Kanpur import), the user wants them shuffled on
+insert so no two consecutive leads (by `created_at`/`updated_at`, which is
+what every leads list sorts by) are from the same city/area — see that
+session's diff for the interleaving approach (bucket by area, round-robin by
+largest remaining bucket, verify zero adjacent collisions before writing).
+
 ## Temporary rule: Karan's bookings are pinned to Sarah
 
 Every other caller's bookings still go through `book_meeting_auto` (the

@@ -68,14 +68,18 @@ const PAGE_SIZE = 25;
 export function LeadsTable({
   leads,
   callers,
+  allLeadsCallerId,
 }: {
   leads: Lead[];
   callers: Caller[];
+  /** Whose assigned leads count toward the "All leads" tab, alongside new
+   * (unassigned) ones — see ALL_LEADS_TAB_CALLER_EMAIL in page.tsx. */
+  allLeadsCallerId: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"new" | "assigned">("new");
+  const [tab, setTab] = useState<"all" | "new" | "assigned">("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCallerId, setBulkCallerId] = useState("");
   const [page, setPage] = useState(1);
@@ -103,7 +107,16 @@ export function LeadsTable({
 
   const newLeads = useMemo(() => leads.filter((l) => !l.assigned_caller_id), [leads]);
   const assignedLeads = useMemo(() => leads.filter((l) => l.assigned_caller_id), [leads]);
-  const tabLeads = tab === "new" ? newLeads : assignedLeads;
+  // Scoped down on purpose — new (unassigned) leads plus whatever's on the
+  // pinned caller's plate, not the full backlog already sitting with others.
+  const allLeadsScoped = useMemo(
+    () =>
+      leads.filter(
+        (l) => !l.assigned_caller_id || l.assigned_caller_id === allLeadsCallerId
+      ),
+    [leads, allLeadsCallerId]
+  );
+  const tabLeads = tab === "new" ? newLeads : tab === "assigned" ? assignedLeads : allLeadsScoped;
 
   const pageCount = Math.max(1, Math.ceil(tabLeads.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -148,7 +161,7 @@ export function LeadsTable({
     });
   }
 
-  function switchTab(next: "new" | "assigned") {
+  function switchTab(next: "all" | "new" | "assigned") {
     setTab(next);
     setSelectedIds(new Set());
     setPage(1);
@@ -245,6 +258,16 @@ export function LeadsTable({
         <div className="flex items-center justify-between border-b border-edge px-5 pt-4">
           <div className="flex gap-1">
             <button
+              onClick={() => switchTab("all")}
+              className={`data rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
+                tab === "all"
+                  ? "border-x border-t border-edge bg-raised text-ink"
+                  : "text-ink-faint hover:text-ink-dim"
+              }`}
+            >
+              All leads ({allLeadsScoped.length})
+            </button>
+            <button
               onClick={() => switchTab("new")}
               className={`data rounded-t-lg px-3.5 py-2 text-sm font-medium transition ${
                 tab === "new"
@@ -307,7 +330,11 @@ export function LeadsTable({
         <div className="overflow-auto">
           {visibleLeads.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-ink-faint">
-              {tab === "new" ? "No new leads." : "No leads assigned yet."}
+              {tab === "new"
+                ? "No new leads."
+                : tab === "assigned"
+                  ? "No leads assigned yet."
+                  : "Nothing new, and nothing on the pinned caller's plate."}
             </p>
           ) : (
             <table className="w-full min-w-[1200px] border-collapse">
